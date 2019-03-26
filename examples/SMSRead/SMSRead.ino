@@ -10,15 +10,15 @@ WioTracker wio = WioTracker();
 
 void setup() {
   wio.Power_On();
-  SerialUSB.println("Power On!");
-  SerialUSB.println("Wait for network registered...");
+  Serial.println("Power On!");
+  Serial.println("Wait for network registered...");
 
   if(!wio.waitForNetworkRegister())
   {
-    SerialUSB.println("Network error!");
+    Serial.println("Network error!");
     return;
   } else {
-    SerialUSB.println("Network ready!");
+    Serial.println("Network ready!");
   }
   wio.readAllRecUnreadSMS();  // Set all "REC UNREAD SMS" to "REC READ SMS"
 }
@@ -28,15 +28,15 @@ void loop() {
   if(-1 != id){
     newSMSNumber = id;
     wio.readSMS(newSMSNumber, message, 128, phone, dateTime);
-    SerialUSB.println("++++++++++++++ Start +++++++++++++++++");
-    SerialUSB.print("From: ");
-    SerialUSB.println(phone);
-    SerialUSB.print("Date: ");
-    SerialUSB.println(dateTime);
-    SerialUSB.println(message);
-    SerialUSB.println("++++++++++++++++ End +++++++++++++++");
+    Serial.println("++++++++++++++ Start +++++++++++++++++");
+    Serial.print("From: ");
+    Serial.println(phone);
+    Serial.print("Date: ");
+    Serial.println(dateTime);
+    Serial.println(message);
+    Serial.println("++++++++++++++++ End +++++++++++++++");
   } else {
-    SerialUSB.println("Waiting for new SMS!");
+    Serial.println("Waiting for new SMS!");
   }
 
   delay(1000);

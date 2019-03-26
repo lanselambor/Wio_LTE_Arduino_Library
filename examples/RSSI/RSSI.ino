@@ -3,19 +3,19 @@
 WioTracker wio = WioTracker();
 
 void setup() {
-  wio.Power_On();
-  SerialUSB.println("Power On!");
+  wio.initialize();
+  Serial.println("Power On!");
   while(!wio.init()){
     delay(1000);
-    SerialUSB.println("Accessing network...");
+    Serial.println("Accessing network...");
   }
-  SerialUSB.println("Initialize done...");
+  Serial.println("Initialize done...");
 
   bool ret = wio.waitForNetworkRegister();
   if(true == ret){
-      SerialUSB.println("Network accessed!");
+      Serial.println("Network accessed!");
   }else {
-      SerialUSB.println("Network failed!");
+      Serial.println("Network failed!");
       return;
   }
 
@@ -23,9 +23,9 @@ void setup() {
 void loop() {
   int rssi;
   wio.getSignalStrength(&rssi);
-  SerialUSB.print("RSSI: ");
-  SerialUSB.print(rssi);
-  SerialUSB.print(" ");
+  Serial.print("RSSI: ");
+  Serial.print(rssi);
+  Serial.print(" ");
    
   if(rssi == 99) {
     rssi = 9999;
@@ -43,7 +43,7 @@ void loop() {
     rssi = -51 + (rssi-30)/2;   // approximate
   }
   
-  SerialUSB.print(rssi);
-  SerialUSB.println("dBm");
+  Serial.print(rssi);
+  Serial.println("dBm");
   delay(1000);
 }

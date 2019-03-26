@@ -5,19 +5,19 @@ GNSS gnss = GNSS();
 
 void setup(){	
 	// Module power on
-  gnss.Power_On();
+  gnss.initialize();
   while(false == gnss.Check_If_Power_On()){
-    SerialUSB.println("Waitting for module to alvie...");
+    Serial.println("Waitting for module to alvie...");
     delay(1000);
   } 
-  SerialUSB.println("\n\rPower On!");
+  Serial.println("\n\rPower On!");
 
   if(!(gnss.open_GNSS())){
-    SerialUSB.println("\n\rGNSS init failed!");
+    Serial.println("\n\rGNSS init failed!");
     return;
   }
 
-  SerialUSB.println("Open GNSS OK.");
+  Serial.println("Open GNSS OK.");
   delay(2000);
 }
 

@@ -27,11 +27,11 @@ File myFile;
 //     Arduino Ethernet shield: pin 4
 //     Adafruit SD shields and modules: pin 10
 //     Sparkfun SD shield: pin 8
-const int chipSelect = 43;
+const int chipSelect = 28;
 
 void setup()
 {
-  SerialUSB.print("Initializing SD card...");
+  Serial.print("Initializing SD card...");
   // On the Ethernet Shield, CS is pin 4. It's set as an output by default.
   // Note that even if it's not used as the CS pin, the hardware SS pin 
   // (10 on most Arduino boards, 53 on the Mega) must be left as an output 
@@ -39,40 +39,40 @@ void setup()
   pinMode(SS, OUTPUT);
 
   if (!SD.begin(chipSelect)) {
-    SerialUSB.println("initialization failed!");
+    Serial.println("initialization failed!");
     return;
   }
-  SerialUSB.println("initialization done.");
+  Serial.println("initialization done.");
 
   if (SD.exists("example.txt")) {
-    SerialUSB.println("example.txt exists.");
+    Serial.println("example.txt exists.");
   }
   else {
-    SerialUSB.println("example.txt doesn't exist.");
+    Serial.println("example.txt doesn't exist.");
   }
 
   // open a new file and immediately close it:
-  SerialUSB.println("Creating example.txt...");
+  Serial.println("Creating example.txt...");
   myFile = SD.open("example.txt", FILE_WRITE);
   myFile.close();
 
   // Check to see if the file exists: 
   if (SD.exists("example.txt")) {
-    SerialUSB.println("example.txt exists.");
+    Serial.println("example.txt exists.");
   }
   else {
-    SerialUSB.println("example.txt doesn't exist.");  
+    Serial.println("example.txt doesn't exist.");  
   }
 
   // delete the file:
-  SerialUSB.println("Removing example.txt...");
+  Serial.println("Removing example.txt...");
   SD.remove("example.txt");
 
   if (SD.exists("example.txt")){ 
-    SerialUSB.println("example.txt exists.");
+    Serial.println("example.txt exists.");
   }
   else {
-    SerialUSB.println("example.txt doesn't exist.");  
+    Serial.println("example.txt doesn't exist.");  
   }
 }
 

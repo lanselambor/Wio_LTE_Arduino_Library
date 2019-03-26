@@ -34,22 +34,22 @@
 
 void  serialPort_init()
 {
-    MODULE_PORT.begin(115200);
+    _moduleSerial.begin(115200);
 }
 
 void AT_bypass()
 {
-    while(MODULE_PORT.available()){
-        serialDebug.write(MODULE_PORT.read());
+    while(_moduleSerial.available()){
+        Serial.write(_moduleSerial.read());
     }
-    while(SerialUSB.available()){
-        MODULE_PORT.write(SerialUSB.read());
+    while(Serial.available()){
+        _moduleSerial.write(Serial.read());
     }
 }
 
 int check_readable()
 {
-    return MODULE_PORT.available();
+    return _moduleSerial.available();
 }
 
 int wait_readable (int wait_time)
@@ -70,7 +70,7 @@ int wait_readable (int wait_time)
 void flush_serial()
 {
     while(check_readable()){
-        MODULE_PORT.read();
+        _moduleSerial.read();
     }
 }
 
@@ -83,7 +83,7 @@ uint16_t read_string_line(char *buffer, int count, unsigned int timeout, unsigne
     prevChar = 0;
     while(1) {
         while (check_readable()) {
-            char c = MODULE_PORT.read();
+            char c = _moduleSerial.read();
             prevChar = millis();
             buffer[i++] = c;
             if( (i >= count) || ('\n' == c) || ('\0' == c) ) break;
@@ -112,7 +112,7 @@ uint16_t read_string_until(char *buffer, int count, char *pattern, unsigned int 
     prevChar = 0;
     while(1) {
         if(check_readable()) {
-            char c = MODULE_PORT.read();
+            char c = _moduleSerial.read();
             prevChar = millis();
             buffer[i++] = c;
             if(i >= count)break;
@@ -140,7 +140,7 @@ uint16_t read_buffer(char *buffer, int count, unsigned int timeout, unsigned int
     prevChar = 0;
     while(1) {
         if(check_readable()) {
-            char c = MODULE_PORT.read();
+            char c = _moduleSerial.read();
             prevChar = millis();
             buffer[i++] = c;
             if(i >= count)break;
@@ -167,12 +167,12 @@ void clean_buffer(char *buffer, int count)
 //HACERR quitar esta funcion ?
 void send_byte(uint8_t data)
 {
-    MODULE_PORT.write(data);
+    _moduleSerial.write(data);
 }
 
 void send_char(const char c)
 {
-    MODULE_PORT.write(c);
+    _moduleSerial.write(c);
 }
 
 void send_cmd(const char* cmd)
@@ -217,10 +217,10 @@ boolean wait_for_resp(const char* resp, DataType type, unsigned int timeout, uns
     prevChar = 0;
     while(1) {
         if(check_readable()) {
-            char c = MODULE_PORT.read();
+            char c = _moduleSerial.read();
             
             if(debug){
-                SerialUSB.print(c);
+                Serial.print(c);
             }
 
             prevChar = millis();
@@ -237,7 +237,7 @@ boolean wait_for_resp(const char* resp, DataType type, unsigned int timeout, uns
 
     }
     #ifdef UART_DEBUG
-    serialDebug.println();
+    Serial.println();
     #endif
     //If is a CMD, we will finish to read buffer.
     if(type == CMD) flush_serial();

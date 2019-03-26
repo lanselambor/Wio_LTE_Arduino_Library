@@ -4,13 +4,13 @@
 WioTracker wio = WioTracker();
 
 void setup() {
-  SerialUSB.println("Begin...");
-  wio.Power_On();
+  Serial.println("Begin...");
+  wio.initialize();
   while(false == wio.Check_If_Power_On()){
-    SerialUSB.println("Waitting for module to alvie...");
+    Serial.println("Waitting for module to alvie...");
     delay(1000);
   }  
-  SerialUSB.println("Power On O.K!");
+  Serial.println("Power On O.K!");
 }
 
 void loop() {

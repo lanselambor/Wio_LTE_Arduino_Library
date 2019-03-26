@@ -3,27 +3,26 @@
 WioTracker wio = WioTracker();
 
 void setup() {
-  SerialUSB.println("Wait for power on...");
-  wio.Power_On();  
-  SerialUSB.println("Power On O.K!");
+  Serial.println("Wait for power on...");
+  wio.initialize();  
 
   while(!wio.init()){
     delay(1000);
-    SerialUSB.println("Accessing network...");
+    Serial.println("Accessing network...");
   }
-  SerialUSB.println("Initialize done...");
+  Serial.println("Initialize done...");
 
   bool ret = wio.waitForNetworkRegister();
   if(true == ret){
-      SerialUSB.println("Network accessed!");
+      Serial.println("Network accessed!");
   }else {
-      SerialUSB.println("Network failed!");
+      Serial.println("Network failed!");
       return;
   }
 
   // Make a phone call
   wio.callUp("xxxxxxxx");
-  SerialUSB.println("Calling...");
+  Serial.println("Calling...");
 
 }
 

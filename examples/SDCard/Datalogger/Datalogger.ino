@@ -27,29 +27,29 @@
 // used as the CS pin, the hardware CS pin (10 on most Arduino boards,
 // 53 on the Mega) must be left as an output or the SD library
 // functions will not work.
-const int chipSelect = 43;
+const int chipSelect = 28;
 
 File dataFile;
 
 void setup()
 {
-  SerialUSB.print("Initializing SD card...");
+  Serial.print("Initializing SD card...");
   // make sure that the default chip select pin is set to
   // output, even if you don't use it:
   pinMode(SS, OUTPUT);
   
   // see if the card is present and can be initialized:
   if (!SD.begin(chipSelect)) {
-    SerialUSB.println("Card failed, or not present");
+    Serial.println("Card failed, or not present");
     // don't do anything more:
     while (1) ;
   }
-  SerialUSB.println("card initialized.");
+  Serial.println("card initialized.");
   
   // Open up the file we're going to log to!
   dataFile = SD.open("datalog.txt", FILE_WRITE);
   if (! dataFile) {
-    SerialUSB.println("error opening datalog.txt");
+    Serial.println("error opening datalog.txt");
     // Wait forever since we cant write data
     while (1) ;
   }
@@ -72,7 +72,7 @@ void loop()
   dataFile.println(dataString);
 
   // print to the serial port too:
-  SerialUSB.println(dataString);
+  Serial.println(dataString);
   
   // The following line will 'save' the file to the SD card after every
   // line of data - this will use more power and slow down how much data

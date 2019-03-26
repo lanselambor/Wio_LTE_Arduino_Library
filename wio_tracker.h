@@ -59,7 +59,7 @@ public:
      *  @return true if connected, false otherwise
      */
 
-    bool init(void);
+    bool initialize(void);
 
    
     /** check if WioTracker module is powered on or not
@@ -256,6 +256,21 @@ public:
     const int RESET_MODULE_PIN   = 35; // PC3
     const int PWR_KEY_PIN        = 36; // PC4
     const int CODEC_I2C_PWR_PIN  = 37; // PC5
+#elif(1 == MKRZERO_4G)   
+    const int DTR_PIN            =  3; // PA11
+    const int RGB_LED_PWR_PIN    =  8; // PA8
+    const int SD_PWR_PIN         = 15; // PA15
+    const int BAT_C_PIN          = 16; // PB0
+    const int RGB_LED_PIN        = 17; // PB1
+    const int MODULE_PWR_PIN     = 21; // PB5
+    const int ENABLE_VCCB_PIN    = 26; // PB10    
+    const int ANT_PWR_PIN        = 28; // PB12
+    const int STATUS_PIN         = 31; // PB15
+    const int WAKEUP_IN_PIN      = 32; // PC0
+    const int AP_READY_PIN       = 33; // PC1
+    const int WAKEUP_DISABLE_PIN = 34; // PC2
+    const int RESET_MODULE_PIN   = 35; // PC3
+    const int PWR_KEY_PIN        = 36; // PC4
 #endif
 };
 #endif

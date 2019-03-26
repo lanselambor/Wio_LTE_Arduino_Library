@@ -26,11 +26,11 @@ File myFile;
 //     Arduino Ethernet shield: pin 4
 //     Adafruit SD shields and modules: pin 10
 //     Sparkfun SD shield: pin 8
-const int chipSelect = 43;
+const int chipSelect = 28;
 
 void setup()
 {
-  SerialUSB.print("Initializing SD card...");
+  Serial.print("Initializing SD card...");
   // On the Ethernet Shield, CS is pin 4. It's set as an output by default.
   // Note that even if it's not used as the CS pin, the hardware SS pin 
   // (10 on most Arduino boards, 53 on the Mega) must be left as an output 
@@ -38,10 +38,10 @@ void setup()
    pinMode(SS, OUTPUT);
    
   if (!SD.begin(chipSelect)) {
-    SerialUSB.println("initialization failed!");
+    Serial.println("initialization failed!");
     return;
   }
-  SerialUSB.println("initialization done.");
+  Serial.println("initialization done.");
   
   // open the file. note that only one file can be open at a time,
   // so you have to close this one before opening another.
@@ -49,30 +49,30 @@ void setup()
   
   // if the file opened okay, write to it:
   if (myFile) {
-    SerialUSB.print("Writing to test.txt...");
+    Serial.print("Writing to test.txt...");
     myFile.println("testing 1, 2, 3.");
 	// close the file:
     myFile.close();
-    SerialUSB.println("done.");
+    Serial.println("done.");
   } else {
     // if the file didn't open, print an error:
-    SerialUSB.println("error opening test.txt");
+    Serial.println("error opening test.txt");
   }
   
   // re-open the file for reading:
   myFile = SD.open("test.txt");
   if (myFile) {
-    SerialUSB.println("test.txt:");
+    Serial.println("test.txt:");
     
     // read from the file until there's nothing else in it:
     while (myFile.available()) {
-    	SerialUSB.write(myFile.read());
+    	Serial.write(myFile.read());
     }
     // close the file:
     myFile.close();
   } else {
   	// if the file didn't open, print an error:
-    SerialUSB.println("error opening test.txt");
+    Serial.println("error opening test.txt");
   }
 }
 

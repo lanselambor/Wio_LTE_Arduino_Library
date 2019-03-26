@@ -35,8 +35,8 @@
 #include <Arduino.h>
 #include <board_config.h>
 
-#define MODULE_PORT Serial1   // UART2
-#define serialDebug SerialUSB
+#define _moduleSerial Serial1  // serial port to communicate with module
+#define _debugSerial  Serial
 
 #define DEFAULT_TIMEOUT              5   //seconds
 #define DEFAULT_INTERCHAR_TIMEOUT 3000   //miliseconds
@@ -44,9 +44,9 @@
 
 
 #if(1==UART_DEBUG)
-#define ERROR(x)            SerialUSB.println(x)
-#define DEBUG(x)            SerialUSB.println(x)
-#define DEBUG_BYTE(x)       SerialUSB.write(x)
+#define ERROR(x)            _debugSerial.println(x)
+#define DEBUG(x)            _debugSerial.println(x)
+#define DEBUG_BYTE(x)       _debugSerial.write(x)
 #else
 #define ERROR(x)
 #define DEBUG(x)

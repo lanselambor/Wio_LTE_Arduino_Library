@@ -26,11 +26,11 @@ File root;
 //     Arduino Ethernet shield: pin 4
 //     Adafruit SD shields and modules: pin 10
 //     Sparkfun SD shield: pin 8
-const int chipSelect = 43;
+const int chipSelect = 28;
 
 void setup()
 {
-  SerialUSB.print("Initializing SD card...");
+  Serial.print("Initializing SD card...");
   // On the Ethernet Shield, CS is pin 4. It's set as an output by default.
   // Note that even if it's not used as the CS pin, the hardware SS pin 
   // (10 on Arduino Uno boards, 53 on the Mega) must be left as an output 
@@ -38,16 +38,16 @@ void setup()
   pinMode(SS, OUTPUT);
 
   if (!SD.begin(chipSelect)) {
-    SerialUSB.println("initialization failed!");
+    Serial.println("initialization failed!");
     return;
   }
-  SerialUSB.println("initialization done.");
+  Serial.println("initialization done.");
 
   root = SD.open("/");
   
   printDirectory(root, 0);
   
-  SerialUSB.println("done!");
+  Serial.println("done!");
 }
 
 void loop()
@@ -63,22 +63,22 @@ void printDirectory(File dir, int numTabs) {
      File entry =  dir.openNextFile();
      if (! entry) {
        // no more files
-       //SerialUSB.println("**nomorefiles**");
+       //Serial.println("**nomorefiles**");
        break;
      }
      for (uint8_t i=0; i<numTabs; i++) {
-       SerialUSB.print('\t');   // we'll have a nice indentation
+       Serial.print('\t');   // we'll have a nice indentation
      }
      // Print the 8.3 name
-     SerialUSB.print(entry.name());
+     Serial.print(entry.name());
      // Recurse for directories, otherwise print the file size
      if (entry.isDirectory()) {
-       SerialUSB.println("/");
+       Serial.println("/");
        printDirectory(entry, numTabs+1);
      } else {
        // files have sizes, directories do not
-       SerialUSB.print("\t\t");
-       SerialUSB.println(entry.size(), DEC);
+       Serial.print("\t\t");
+       Serial.println(entry.size(), DEC);
      }
      entry.close();
    }

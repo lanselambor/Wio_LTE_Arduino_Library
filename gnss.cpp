@@ -83,7 +83,7 @@ bool GNSS::getCoordinate(void)
   clean_buffer(buffer, 128);
   send_cmd("AT+QGPSLOC?\r\n");
   read_buffer(buffer, 128, 2);
-  // SerialUSB.println(buffer);
+  // Serial.println(buffer);
   if(NULL != (p = strstr(buffer, "+CME ERROR")))
   {
     return false;
@@ -186,8 +186,8 @@ bool GNSS::NMEA_read_and_save(const char *type, char *save_buff)
   sprintf(send_buff, "AT+QGPSGNMEA=\"%s\"\r\n", type);                                                                                                                                                                                          
   send_cmd(send_buff);  // Send command
   read_string_until(recv_buff, 192, "OK", 1);  // Save response data
-  // SerialUSB.print("##DEBUG read_string_until: ");
-  // SerialUSB.println(recv_buff);
+  // Serial.print("##DEBUG read_string_until: ");
+  // Serial.println(recv_buff);
   if(NULL == (p = strstr(recv_buff, "+QGPSGNMEA:")))
   {
     return false;
@@ -197,8 +197,8 @@ bool GNSS::NMEA_read_and_save(const char *type, char *save_buff)
     save_buff[i++] = *(p++);
   }
   save_buff[i] = '\0';
-  // SerialUSB.print("##DEBUG save_buff: ");
-  // SerialUSB.println(save_buff);
+  // Serial.print("##DEBUG save_buff: ");
+  // Serial.println(save_buff);
   return true;
 
 } 
@@ -246,8 +246,8 @@ bool GNSS::read_NMEA_GSV(char *save_buff)
   clean_buffer(recv_buff,192);                                                                                                                                                                                                                  
   send_cmd("AT+QGPSGNMEA=\"GSV\"\r\n");  // Send command
   read_string_until(recv_buff, 512, "OK", 1);  // Save response data  
-  // SerialUSB.print("##DEBUG read_string_until: ");
-  // SerialUSB.println(recv_buff);
+  // Serial.print("##DEBUG read_string_until: ");
+  // Serial.println(recv_buff);
 
   if(NULL == (p = strstr(recv_buff, "+QGPSGNMEA:")))
   {
@@ -263,8 +263,8 @@ bool GNSS::read_NMEA_GSV(char *save_buff)
     }
   }
   
-  // SerialUSB.print("##DEBUG save_buff: ");
-  // SerialUSB.println(save_buff);
+  // Serial.print("##DEBUG save_buff: ");
+  // Serial.println(save_buff);
   return true;
 
 } 

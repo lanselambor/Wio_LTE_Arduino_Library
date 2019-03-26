@@ -8,13 +8,12 @@ void setup() {
   pinMode(wio.ENABLE_VCCB_PIN, OUTPUT);
   digitalWrite(wio.ENABLE_VCCB_PIN, HIGH);
   
-  SerialUSB.println("Begin...");
   Serial.begin(115200);
-
+  Serial.println("Begin...");  
 }
 
 void loop() {
-  SerialUSB.println("Grove UART is sending message.");
+  Serial.println("Grove UART is sending message.");
   Serial.println("From Grove UART.");
   delay(1000);
   

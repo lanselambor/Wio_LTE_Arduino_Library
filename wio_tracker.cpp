@@ -42,7 +42,7 @@ void Peripherial_Init(){
 
 WioTracker::WioTracker()
 {
-    Peripherial_Init();
+    // Peripherial_Init();
     
 #if(1 == RGB_LED_ON)
     pinMode(RGB_LED_PWR_PIN, OUTPUT);
@@ -50,8 +50,10 @@ WioTracker::WioTracker()
 #endif   
 }   
 
-bool WioTracker::init(void)
+bool WioTracker::initialize(void)
 {
+    serialPort_init();
+    
     if(!check_with_cmd(F("AT\r\n"),"OK\r\n",CMD)){
         return false;
     }
@@ -82,7 +84,7 @@ void WioTracker::Power_On(void)
   int errCnt = 0;
   bool is_power_on = false; 
 
-  serialPort_init();
+//   serialPort_init();
 
   is_power_on = Check_If_Power_On(); 
 

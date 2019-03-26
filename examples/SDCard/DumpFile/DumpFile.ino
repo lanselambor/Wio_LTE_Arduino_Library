@@ -25,22 +25,22 @@
 //     Arduino Ethernet shield: pin 4
 //     Adafruit SD shields and modules: pin 10
 //     Sparkfun SD shield: pin 8
-const int chipSelect = 43;
+const int chipSelect = 28;
 
 void setup()
 {
-  SerialUSB.print("Initializing SD card...");
+  Serial.print("Initializing SD card...");
   // make sure that the default chip select pin is set to
   // output, even if you don't use it:
   pinMode(SS, OUTPUT);
   
   // see if the card is present and can be initialized:
   if (!SD.begin(chipSelect)) {
-    SerialUSB.println("Card failed, or not present");
+    Serial.println("Card failed, or not present");
     // don't do anything more:
     return;
   }
-  SerialUSB.println("card initialized.");
+  Serial.println("card initialized.");
   
   // open the file. note that only one file can be open at a time,
   // so you have to close this one before opening another.
@@ -49,13 +49,13 @@ void setup()
   // if the file is available, write to it:
   if (dataFile) {
     while (dataFile.available()) {
-      SerialUSB.write(dataFile.read());
+      Serial.write(dataFile.read());
     }
     dataFile.close();
   }  
   // if the file isn't open, pop up an error:
   else {
-    SerialUSB.println("error opening datalog.txt");
+    Serial.println("error opening datalog.txt");
   } 
 }
 
