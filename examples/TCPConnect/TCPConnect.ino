@@ -5,9 +5,9 @@ Ethernet eth = Ethernet();
 
 const char apn[10] = "CMNET";
 // const char apn[10] = "UNINET";
-const char URL[100] = "os.mbed.com";
+const char URL[100] = "45.77.14.150";
 char http_cmd[100] = "GET /media/uploads/mbed_official/hello.txt HTTP/1.0\n\r\n\r";
-int port = 80;
+int port = 5000;
 
 int ret = 0;
 
@@ -15,6 +15,7 @@ int ret = 0;
 void setup() {
   eth.initialize();
   Serial.begin(115200);
+  while(!Serial);
   Serial.println("Begin...");
   eth.Power_On();
   while(false == eth.Check_If_Power_On()){
