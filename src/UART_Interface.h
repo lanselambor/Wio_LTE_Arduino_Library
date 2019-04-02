@@ -29,8 +29,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef __UART_INTERFACE_H__
-#define __UART_INTERFACE_H__
+#pragma once
 
 #include <Arduino.h>
 #include <board_config.h>
@@ -42,6 +41,13 @@
 #define DEFAULT_INTERCHAR_TIMEOUT 3000   //miliseconds
 
 
+#define Log(x)     (_debugSerial.print(x))
+#define Logln(x)     (_debugSerial.println(x))
+#define Log_info(x)     (_debugSerial.print("[INFO] "), _debugSerial.println(x))
+#define Log_error(x)     (_debugSerial.print("[ERROR] "), _debugSerial.println(x))
+#define Log_prolog_in(x)       (_debugSerial.print("<<"), _debugSerial.println(x))
+#define Log_prolog_out(x)      (_debugSerial.print(">>"), _debugSerial.println(x))
+
 
 #if(1==UART_DEBUG)
 #define ERROR(x)            _debugSerial.println(x)
@@ -52,6 +58,19 @@
 #define DEBUG(x)
 #define DEBUG_BYTE(x)
 #endif
+
+#ifdef UART_DBEUG
+#define debugPrint(x)     _debugSerial.print(x)
+#define debugPrintln(x)   _debugSerial.println(x)
+#define debugPrintIn(x)     _debugSerial.print("<< "),_debugSerial.printl(x)
+#define debugPrintOut(x)     _debugSerial.print(">> "),_debugSerial.println(x)
+#else
+#define debugPrint(x)
+#define debugPrintln(x)
+#define debugPrintOut(x)
+#endif
+
+
  
 enum DataType {
     CMD     = 0,
@@ -77,4 +96,3 @@ void  send_End_Mark(void);
 boolean wait_for_resp(const char* resp, DataType type, unsigned int timeout = DEFAULT_TIMEOUT, unsigned int chartimeout = DEFAULT_INTERCHAR_TIMEOUT, bool debug=false);
 boolean  check_with_cmd(const char* cmd, const char *resp, DataType type, unsigned int timeout = DEFAULT_TIMEOUT, unsigned int chartimeout = DEFAULT_INTERCHAR_TIMEOUT*5, bool debug=false);
 boolean  check_with_cmd(const __FlashStringHelper* cmd, const char *resp, DataType type, unsigned int timeout = DEFAULT_TIMEOUT, unsigned int chartimeout = DEFAULT_INTERCHAR_TIMEOUT, bool debug=false);
-#endif

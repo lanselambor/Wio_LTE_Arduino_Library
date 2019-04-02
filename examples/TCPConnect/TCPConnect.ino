@@ -17,7 +17,7 @@ void setup() {
   Serial.begin(115200);
   while(!Serial);
   Serial.println("Begin...");
-  eth.Power_On();
+  
   while(false == eth.Check_If_Power_On()){
     Serial.println("Waitting for module to alvie...");
     delay(1000);

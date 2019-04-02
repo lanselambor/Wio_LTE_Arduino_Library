@@ -29,8 +29,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef __WIO_TRACKER_H__
-#define __WIO_TRACKER_H__
+#pragma once
 
 #include "UART_Interface.h"
 #include "itoa.h"
@@ -192,4 +191,3 @@ public:
 private:
     const int DTR_PIN            =  3; // PA11
 };
-#endif

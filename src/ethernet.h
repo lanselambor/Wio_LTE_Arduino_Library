@@ -28,8 +28,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef __ETHERNET_H__
-#define __ETHERNET_H__
+#pragma once
 
 #include "stdio.h"
 #include "wio_tracker.h"
@@ -178,7 +177,6 @@ public:
 
 };
 
-#endif 
 /* End of file */
 
 

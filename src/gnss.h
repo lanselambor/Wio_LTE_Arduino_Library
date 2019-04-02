@@ -29,8 +29,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef __GNSS_H__
-#define __GNSS_H__
+#pragma once
 
 #include "wio_tracker.h"
 #include "UART_Interface.h"
@@ -111,4 +110,3 @@ public:
     bool read_NMEA_GSV(char *save_buff);
 };
 
-#endif
