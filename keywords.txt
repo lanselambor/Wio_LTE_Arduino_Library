@@ -14,7 +14,7 @@ Ethernet	KEYWORD2
 init	KEYWORD2
 join	KEYWORD2
 getIP	KEYWORD2
-str_to_ip	KEYWORD2
+str_to_u32ip	KEYWORD2
 recoverIP	KEYWORD2
 networkCheck	KEYWORD2
 connect	KEYWORD2
