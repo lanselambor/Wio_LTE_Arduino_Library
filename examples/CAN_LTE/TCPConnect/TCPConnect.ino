@@ -4,16 +4,16 @@ Quectel_EC2x ec2x;
 
 // const char apn[10] = "CMNET";
 const char apn[10] = "UNINET";
-const char URL[100] = "45.77.14.150";
-char http_cmd[100] = "GET /media/uploads/mbed_official/hello.txt HTTP/1.0\n\r\n\r";
-int port = 5000;
+const char URL[100] = "example.com";
+char http_cmd[100] = "GET / HTTP/1.0\n\r\n\r";
+int port = 80;
 
 int ret = 0;
 
 void setup() {  
   Serial.begin(115200);
   while(!Serial);
-  Serial.println("-- Begin --------------------");
+  Serial.println("-- Wio LTE --------------------");
   
   ec2x.Init();
 
@@ -29,42 +29,57 @@ void setup() {
   }
   Serial.println("### Initialize done");
 
+  if(!ec2x.Deactivate())
+  {
+    Serial.println("### Failed to deactive network");
+    return;
+  }
+
   if(!ec2x.Activate(apn, "", ""))
   {
     Serial.println("### Failed to active opeator");
     return;
   }
 
-  // return;
-
-
   if(!ec2x.getIPAddr())
   {    
+    Serial.println("### Failed to get ip.");
     return;
   }
-  // Serial.print("### IP: ");
-  // Serial.println(ec2x._str_ip);
-
-  delay(1000);
+  Serial.print("### IP: ");
+  Serial.println(ec2x._str_ip);
 
   if(!ec2x.getOperator())
   {
+    Serial.println("### Failed to get operator.");
     return;
   }
   Serial.print("### Operator: ");
   Serial.println(ec2x._operator);
 
-  // if(ec2x.connect(URL, port, TCP)) 
-  // {
-  //   ec2x.write(http_cmd); 
-  //   while(_moduleSerial.available()){
-  //       Serial.write(_moduleSerial.read());
-  //   }    
-  //   ec2x.close(1);
-  // } 
-  // else {
-  //   Serial.println("Connect Error!");
-  // }
+  if(ec2x.sockOpen(URL, port, TCP)) 
+  {        
+    Stopwatch ws;
+    ws.Restart();
+
+    ec2x.sockWrite(0, http_cmd);    
+    ec2x.sockReceive(0, NULL, 1500);     
+    while(ws.ElapsedMilliseconds() < 10000)
+    {
+      ec2x._AtSerial.AT_ByPass();
+    }
+    
+    if(!ec2x.sockClose(0))
+    {
+      Serial.println("Socket close Error!");
+      return;
+    }
+    Serial.println("Socket closed");
+    
+  } 
+  else {
+    Serial.println("Connect Error!");
+  }
   // int signal = 0;;
   // wiolte.getSignalStrength(&signal);
   // Serial.print("Signale: ");
