@@ -106,31 +106,43 @@ boolean Quectel_EC2x::Deactivate()
  */
 boolean Quectel_EC2x::getIPAddr(void)
 {
-    // AT+CGPADDR=1
-    // +CGPADDR: 1,"10.33.124.114"
+    // AT+QIACT?
+    // +QIACT: 1,1,1,"10.72.134.66"
 
     char *p;
-    char rxBuf[64] = {'\0'};
+    uint8_t i = 0;
+    char rxBuf[128] = {'\0'};
     uint8_t a0, a1, a2, a3;
 
     // Get IP address
     _AtSerial.WriteCommand("AT+QIACT?\r\n");
     _AtSerial.Read(rxBuf, sizeof(rxBuf));
+    rxBuf[127] = '\0';
     DEBUG(rxBuf);
 
+    // sscanf can not use here, why?
+    // if(4 == sscanf(p, "+QIACT: %*d,%*d,%*d,\"%d.%d.%d.%d\"", &a0, &a1, &a2, &a3))  
     if(NULL != (p = strstr(rxBuf, "+QIACT:")))
-    {
-        if(4 == sscanf(p, "+QIACT: %*d,%*d,%*d,\"%d.%d.%d.%d\"", &a0, &a1, &a2, &a3))
-        {      
-            // _u32ip = TUPLE_TO_U32IP(a0, a1, a2, a3);
-            // sprintf(_str_ip, IP_FORMAT, a0, a1, a2, a3);
-        }
+    {       
+        p = strtok(rxBuf, ",");  // +QIACT: 1,1,1,"10.72.134.66"
+        p = strtok(NULL, ",");  // 1,1,"10.72.134.66"
+        p = strtok(NULL, ",");  // 1,"10.72.134.66"
+        p = strtok(NULL, ",");  // "10.72.134.66"
+        p += 1;
     }
     else
     {
         Log_error("+QIACT failed");
         return RET_ERR;
     }
+
+    memset(_str_ip, '\0',sizeof(_str_ip));
+    while((*(p+i) != '\"') && (*(p+i) != '\0'))
+    { 
+      _str_ip[i] = *(p+i);
+      i++;
+    }
+    _u32ip = str_to_u32ip(_str_ip);
 
     return RET_OK;
 }
@@ -171,7 +183,7 @@ boolean Quectel_EC2x::getOperator()
  * Parse IP string
  * @return ip in hex
  */
-uint32_t Quectel_EC2x::str_to_u32(const char* str)
+uint32_t Quectel_EC2x::str_to_u32ip(char* str)
 {
     uint32_t ip = 0;
     char *p = (char*)str;
@@ -237,9 +249,9 @@ boolean Quectel_EC2x::sockOpen(const char *host, int port, Socket_type connectTy
   char txBuf[128] = {0};
   char rxBuf[128] = {0};
   char *p;
-
+  
   _AtSerial.WriteCommand("AT+QISTATE?\r\n");
-  _AtSerial.Read((char*)rxBuf, sizeof(rxBuf), 2000);
+  _AtSerial.Read((char*)rxBuf, sizeof(rxBuf), 2000);  
 
   //if socketId 0 has been used, then deactive PDP then re-open socket
   if(NULL != (p = strstr(rxBuf, "+QISTATE:"))) return false;  
@@ -248,8 +260,9 @@ boolean Quectel_EC2x::sockOpen(const char *host, int port, Socket_type connectTy
   if(connectType == TCP) { sprintf(txBuf, "AT+QIOPEN=1,0,\"%s\",\"%s\",%d\r\n", typeStr, host, port); }
   else if(connectType == UDP) { sprintf(txBuf, "AT+QIOPEN=1,0,\"%s\",\"%s\",%d\r\n", typeStr, host, port); }
   else { return false; } 
-      
-  while(!_AtSerial.WriteCommandAndWaitForResponse(txBuf, "+QIOPEN: 0", CMD, 10000)) {// connect tcp
+  
+  DEBUG(txBuf);
+  while(!_AtSerial.WriteCommandAndWaitForResponse(txBuf, "+QIOPEN: 0", CMD, 10000)) {// connect tcp      
       ERROR("ERROR:QIOPEN");
       if(errCount > 3){
           return false;
@@ -287,7 +300,7 @@ boolean Quectel_EC2x::sockClose(int sockid)
  * @return true for success, false for failure.
  * 
 */
-boolean Quectel_EC2x::socketWrite(uint8_t sockid, char *data, uint16_t dataSize)
+boolean Quectel_EC2x::sockWrite(uint8_t sockid, char *data, uint16_t dataSize)
 {
   if(sockid < 0 || sockid > 11) return false;
   if(data == NULL || data[0] == '\0' || dataSize <= 0) return false;
@@ -295,20 +308,20 @@ boolean Quectel_EC2x::socketWrite(uint8_t sockid, char *data, uint16_t dataSize)
   char txBuf[32] = {'\0'};
 
   sprintf(txBuf, "AT+QISEND=0,%d\r\n", dataSize);
-  if(!_AtSerial.WriteCommandAndWaitForResponse(txBuf, ">", CMD, 500)) return false;
+  if(!_AtSerial.WriteCommandAndWaitForResponse(txBuf, ">", CMD, 500, UART_DEBUG)) return false;
   _AtSerial.WriteCommand(data);
   if(!_AtSerial.WaitForResponse("SEND OK\r\n", CMD, 5000)) return false;
    
   return true;
 }
 
-boolean Quectel_EC2x::socketWrite(uint8_t sockid, char *data)
+boolean Quectel_EC2x::sockWrite(uint8_t sockid, char *data)
 {
-  socketWrite(sockid, data, strlen(data));
+  sockWrite(sockid, data, strlen(data));
 }
 
 
-boolean Quectel_EC2x::socketReceive(uint8_t sockid, char *data, uint16_t dataSize )
+boolean Quectel_EC2x::sockReceive(uint8_t sockid, char *data, uint16_t dataSize)
 {
   char txBuf[32] = {'\0'};
 

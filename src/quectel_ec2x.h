@@ -75,7 +75,8 @@ class Quectel_EC2x
 
         boolean getIPAddr(void);
 		boolean getOperator(void);
-        uint32_t str_to_u32(const char* str);
+        uint32_t str_to_u32ip(char* str);
+
                 
         boolean getSignalStrength(int *buffer);
 
@@ -83,9 +84,9 @@ class Quectel_EC2x
         // boolean sockOpen(const char *host, Socket_type port, Socket_type connectType);
         boolean sockOpen(const char *host, int port, Socket_type connectType);
         boolean sockClose(int sockid);
-        boolean socketWrite(uint8_t sockid, char *data, uint16_t dataSize);
-        boolean socketWrite(uint8_t sockid, char *data);
-        boolean socketReceive(uint8_t sockid, char *data, uint16_t dataSize );
+        boolean sockWrite(uint8_t sockid, char *data, uint16_t dataSize);
+        boolean sockWrite(uint8_t sockid, char *data);
+        boolean sockReceive(uint8_t sockid, char *data, uint16_t dataSize );
         boolean udpSendTo(uint8_t sockid, char *host, uint16_t port, char oneByte);               
         boolean udpSendTo(uint8_t sockid, char *host, uint16_t port, char *data, uint16_t dataSize);
 
