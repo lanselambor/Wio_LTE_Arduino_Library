@@ -98,11 +98,9 @@ uint16_t AtSerial::Read(char* buffer,uint8_t count, uint32_t timeout)
 			if (sw.ElapsedMilliseconds() >= timeout) {
 					break;
 			}
-			//If interchar Timeout => return FALSE. So we can return sooner from this function. Not DO it if we dont recieve at least one char (prevChar <> 0)
-			// if (((unsigned long) (millis() - prevChar) > chartimeout) && (prevChar != 0)) {
-			// 		break;
-			// }
 	}
+	buffer[count - 1] = '\0';
+
 	return (uint16_t)(i - 1);
 }
 void  AtSerial::CleanBuffer(char* buffer, uint16_t count)
