@@ -42,7 +42,7 @@ typedef enum {
     GNS
 } NMEA_type;
 
-class Quectel_EC2x
+class Quectel_LTE
 {
     public:
         uint32_t _u32ip = 0;
@@ -64,29 +64,28 @@ class Quectel_EC2x
 
         AtSerial _AtSerial;
 
-        Quectel_EC2x();        
-        void Init();
-        
+        Quectel_LTE();        
+        void initialize();
+/************************** Standard AT command **************************/        
+        bool initialAtCommands(void);
+        bool checkSIMStatus(void);
 /************************** Network startup **************************/            
         boolean isAlive(uint32_t timeout = 5000);
         boolean waitForNetworkRegister(uint32_t timeout = 120000);
         boolean Activate(const char* APN, const char* userName, const char* password, long waitForRegistTimeout = 120000);
         boolean Deactivate();
-
+          
         boolean getIPAddr(void);
 		boolean getOperator(void);
         uint32_t str_to_u32ip(char* str);
 
-                
         boolean getSignalStrength(int *buffer);
-
 /************************** Socket TCP UDP **************************/
-        // boolean sockOpen(const char *host, Socket_type port, Socket_type connectType);
         boolean sockOpen(const char *host, int port, Socket_type connectType);
         boolean sockClose(int sockid);
         boolean sockWrite(uint8_t sockid, char *data, uint16_t dataSize);
         boolean sockWrite(uint8_t sockid, char *data);
-        boolean sockReceive(uint8_t sockid, char *data, uint16_t dataSize );
+        uint16_t sockReceive(uint8_t sockid, char *data, uint16_t dataSize, uint32_t timeoutMs );
         boolean udpSendTo(uint8_t sockid, char *host, uint16_t port, char oneByte);               
         boolean udpSendTo(uint8_t sockid, char *host, uint16_t port, char *data, uint16_t dataSize);
 

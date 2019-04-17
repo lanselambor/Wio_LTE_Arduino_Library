@@ -67,8 +67,7 @@ class AtSerial
 		void WriteCommand(const __FlashStringHelper* cmd);
 		void WriteEndMark(void);
 		bool WaitForResponse(const char* resp, DataType type, unsigned int timeout = DEFAULT_TIMEOUT, bool debug=false);
-		// bool WriteCommandAndWaitForResponse(uint8_t* cmd, const char *resp, DataType type, unsigned int timeout, bool debug);
 		bool WriteCommandAndWaitForResponse(const char* cmd, const char *resp, DataType type, unsigned int timeout = DEFAULT_TIMEOUT*5, bool debug=false);
 		bool WriteCommandAndWaitForResponse(const __FlashStringHelper* cmd, const char *resp, DataType type, unsigned int timeout = DEFAULT_TIMEOUT, bool debug=false);
-		void AT_ByPass(void);
+		void AT_Bypass(void);
 };

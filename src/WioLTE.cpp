@@ -1,5 +1,5 @@
 /*
- * wiowio_trackerlte.cpp
+ * WioLTE.cpp
  * A library for SeeedStudio Wio LTE Tracker
  *  
  * Copyright (c) 2017 Seeed Technology Co., Ltd.
@@ -32,7 +32,7 @@
  #include <stdio.h>
  #include <itoa.h>
 
- #include "wiolte_cat_1.h"
+ #include "WioLTE.h"
  #include "Stopwatch.h"
 
 // WioLTE* WioLTE::inst;
@@ -101,11 +101,23 @@ void WioLTE::powerSupplyAntenna(uint8_t on)
 
 void WioLTE::initialize(void)
 {    
-    _AtSerial._Serial->begin(115200);    
+    _AtSerial._Serial->begin(115200);           
+}
+
+void WioLTE::reset(void)
+{
+    turnOff();
+    turnOn();
+}
+
+void WioLTE::turnOff(void)
+{
+    powerSupplyLTE(0);
+    delay(1000);
 }
 
 void WioLTE::turnOn(void)
-{
+{    
     powerSupplyLTE(1);
     pinMode(WAKEUP_IN_PIN, OUTPUT);
     digitalWrite(WAKEUP_IN_PIN, LOW);
@@ -118,55 +130,6 @@ void WioLTE::turnOn(void)
     digitalWrite(PWR_KEY_PIN, LOW);
 }
 
-bool WioLTE::initialAtCommands(void)
-{
-    // turn echo off
-    if( !_AtSerial.WriteCommandAndWaitForResponse("AT E0\r\n", "OK", CMD)) {
-        return false;
-    }
-
-    // verbose error messages
-    if( !_AtSerial.WriteCommandAndWaitForResponse("AT+CMEE=2\r\n", "OK", CMD)) {
-        return false;
-    }
-
-    // enable network identification LED
-    if( !_AtSerial.WriteCommandAndWaitForResponse("AT+UGPIOC=16,2\r\n", "OK", CMD)) {
-        return false;
-    }
-
-    // enable mosule power state identification LED
-    if( !_AtSerial.WriteCommandAndWaitForResponse("AT+UGPIOC=23,10\r\n", "OK", CMD)) {
-        return false;
-    }
-
-    // SIM check
-    if (!checkSIMStatus()) {
-        return false;
-    }
-
-    return true;
-}
-
-/** check if WioLTE module is powered on or not
- *  @returns
- *      true on success
- *      false on error
- */
-bool WioLTE::isAlive(uint32_t timeout)
-{
-    Stopwatch sw;
-    sw.Restart();
-
-    while(sw.ElapsedMilliseconds() <= timeout)
-    {
-        if(_AtSerial.WriteCommandAndWaitForResponse(F("AT\r\n"), "OK", CMD, 500)){
-            return true;
-        }
-    }    
-    
-    return false;
-}
 
 /** Set URC port to uart1
  *  @returns
@@ -178,78 +141,7 @@ bool WioLTE::setURCtoUart1(void)
     return _AtSerial.WriteCommandAndWaitForResponse("AT+QURCCFG=\"urcport\",\"uart1\"", "OK", CMD, 2);
 }
 
-/** check SIM card status
-*  @returns
-*      true on SIM card Ready
-*      false on error
-*/
-bool WioLTE::checkSIMStatus(void)
-{
-    char Buffer[32];
-    int count = 0;
-    _AtSerial.CleanBuffer(Buffer,32);
-    while(count < 3) {
-        _AtSerial.WriteCommand("AT+CPIN?\r\n");
-        _AtSerial.Read(Buffer,32,DEFAULT_TIMEOUT);
-        if((NULL != strstr(Buffer,"+CPIN: READY"))) {
-            break;
-        }
-        count++;
-        delay(300);
-    }
-    if(count == 3) {
-        return false;
-    }
-    return true;
-}
 
-/** Wait for network register
-*  @returns
-*      true on success
-*      false on error
-*/
-bool WioLTE::waitForNetworkRegister(void)
-{
-  bool ret;
-  int errCounts = 0;
-
-  // Check Registration Status
-  while(1){
-    if(_AtSerial.WriteCommandAndWaitForResponse("AT+CEREG?\r\n", "+CEREG: 0,1", CMD, 2, 2000) || // Home network
-        _AtSerial.WriteCommandAndWaitForResponse("AT+CEREG?\r\n", "+CEREG: 0,5", CMD, 2, 2000)) // Roaming
-    {
-        ret = true;
-        break;
-    }
-    errCounts++;
-    if(errCounts > 15)    // Check for 30 times
-    {
-      ret = false;
-      break;
-    }
-    delay(1000);
-  }
-
-  errCounts = 0;
-  while(1)
-  {
-    if(_AtSerial.WriteCommandAndWaitForResponse("AT+CGREG?\r\n", "+CGREG: 0,1", CMD, 2, 2000) || // Home network
-        _AtSerial.WriteCommandAndWaitForResponse("AT+CGREG?\r\n", "+CGREG: 0,5", CMD, 2, 2000)) // Roaming
-    {
-        ret = true;
-        break;
-    }
-    errCounts++;
-    if(errCounts > 15)    // Check for 30 times
-    {
-    ret = false;
-    break;
-    }
-    delay(1000);
-  }
-  
-  return ret;
-}
 
 /** send text SMS
  *  @param  *number phone number which SMS will be send to

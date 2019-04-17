@@ -54,7 +54,7 @@ colorWheel	KEYWORD2
 RGBCycle	KEYWORD2
 
 serialPort_init	KEYWORD2
-AT_bypass	KEYWORD2
+AT_Bypass	KEYWORD2
 check_readable	KEYWORD2
 wait_readable	KEYWORD2
 flush_serial	KEYWORD2

@@ -1,5 +1,5 @@
 /*
- * wiwio_trackerolte.h
+ * WioLTE.h
  * A library for SeeedStudio Wio Tracker LTE
  *  
  * Copyright (c) 2017 Seeed Technology Co., Ltd.
@@ -83,13 +83,11 @@ class WioLTE
         void powerSupplyCodec(uint8_t on);
         void powerSupplyAntenna(uint8_t on);
               
-        void initialize(void);  
-        void turnOn(void);
-        bool initialAtCommands(void); 
-        bool isAlive(uint32_t timeout = 3000);   
-        bool setURCtoUart1(void);
-        bool checkSIMStatus(void);  
-        bool waitForNetworkRegister(void);    
+        void initialize(void); 
+        void reset(void); 
+        void turnOff(void);
+        void turnOn(void);  
+        bool setURCtoUart1(void);           
         bool sendSMS(char* number, char* data);    
         bool readAllRecUnreadSMS(void);    
         int16_t detectRecUnreadSMS(void);    

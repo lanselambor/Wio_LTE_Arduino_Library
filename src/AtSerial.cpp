@@ -120,7 +120,7 @@ void  AtSerial::WriteCommand(const char* cmd)
 	for(uint16_t i=0; i<strlen(cmd); i++)
 	{
 			WriteCommand(cmd[i]);
-	}
+	}	
 }
 void  AtSerial::WriteCommand(const __FlashStringHelper* cmd)
 {
@@ -190,7 +190,7 @@ bool AtSerial::WriteCommandAndWaitForResponse(const __FlashStringHelper* cmd, co
   return WaitForResponse(resp, type, timeout, debug);
 }
 
-void AtSerial::AT_ByPass(void)
+void AtSerial::AT_Bypass(void)
 {
 	if(_Serial->available() > 0)
 	{

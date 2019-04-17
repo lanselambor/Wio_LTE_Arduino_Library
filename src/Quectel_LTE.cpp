@@ -1,15 +1,31 @@
 #include <stdio.h>
 
-#include "quectel_ec2x.h"
+#include "Quectel_LTE.h"
 
-Quectel_EC2x::Quectel_EC2x() : _AtSerial(&Serial1)
+Quectel_LTE::Quectel_LTE() : _AtSerial(&Serial1)
 {
 
 }
 
-void Quectel_EC2x::Init()
+void Quectel_LTE::initialize()
 {
   _AtSerial._Serial->begin(115200);
+  initialAtCommands();
+}
+
+bool Quectel_LTE::initialAtCommands(void)
+{
+    // turn echo off
+    if( !_AtSerial.WriteCommandAndWaitForResponse("AT E0\r\n", "OK", CMD)) {
+        return false;
+    }
+
+    // verbose error messages
+    if( !_AtSerial.WriteCommandAndWaitForResponse("AT+CMEE=2\r\n", "OK", CMD)) {
+        return false;
+    }
+
+    return true;
 }
 
 /** check if module is powered on or not
@@ -17,7 +33,7 @@ void Quectel_EC2x::Init()
  *      true on success
  *      false on error
  */
-boolean Quectel_EC2x::isAlive(uint32_t timeout)
+boolean Quectel_LTE::isAlive(uint32_t timeout)
 {
     Stopwatch sw;
     sw.Restart();
@@ -25,14 +41,39 @@ boolean Quectel_EC2x::isAlive(uint32_t timeout)
     while(sw.ElapsedMilliseconds() <= timeout)
     {
         if(_AtSerial.WriteCommandAndWaitForResponse(F("AT\r\n"), "OK", CMD, 500)){
+            Logln("");
             return RET_OK;
         }
+        Log(".");
     }    
     
     return false;
 }
 
-boolean Quectel_EC2x::waitForNetworkRegister(uint32_t timeout)
+/** 
+ * check SIM card status
+ */
+bool Quectel_LTE::checkSIMStatus(void)
+{
+    char Buffer[32];
+    int count = 0;
+    _AtSerial.CleanBuffer(Buffer,32);
+    while(count < 3) {
+        _AtSerial.WriteCommand("AT+CPIN?\r\n");
+        _AtSerial.Read(Buffer,32,DEFAULT_TIMEOUT);
+        if((NULL != strstr(Buffer,"+CPIN: READY"))) {
+            break;
+        }
+        count++;
+        delay(300);
+    }
+    if(count == 3) {
+        return false;
+    }
+    return true;
+}
+
+boolean Quectel_LTE::waitForNetworkRegister(uint32_t timeout)
 {
     Stopwatch sw;
     sw.Restart();
@@ -65,7 +106,7 @@ boolean Quectel_EC2x::waitForNetworkRegister(uint32_t timeout)
   return RET_OK;
 }
 
-boolean Quectel_EC2x::Activate(const char* APN, const char* userName, const char* password, long waitForRegistTimeout)
+boolean Quectel_LTE::Activate(const char* APN, const char* userName, const char* password, long waitForRegistTimeout)
 {
     char sendBuffer[64] = {0};
 
@@ -94,7 +135,7 @@ boolean Quectel_EC2x::Activate(const char* APN, const char* userName, const char
 	return RET_OK;
 }
 
-boolean Quectel_EC2x::Deactivate()
+boolean Quectel_LTE::Deactivate()
 {
     if (!_AtSerial.WriteCommandAndWaitForResponse("AT+QIDEACT=1\r\n", "OK", CMD, 500, UART_DEBUG)) return RET_ERR;
 
@@ -104,7 +145,7 @@ boolean Quectel_EC2x::Deactivate()
 /**
  * Get IP address
  */
-boolean Quectel_EC2x::getIPAddr(void)
+boolean Quectel_LTE::getIPAddr(void)
 {
     // AT+QIACT?
     // +QIACT: 1,1,1,"10.72.134.66"
@@ -150,7 +191,7 @@ boolean Quectel_EC2x::getIPAddr(void)
 /**
  * Get operator name
 */
-boolean Quectel_EC2x::getOperator()
+boolean Quectel_LTE::getOperator()
 {
     // AT+COPS?
     // +COPS: 0,0,"CHN-UNICOM",7
@@ -183,7 +224,7 @@ boolean Quectel_EC2x::getOperator()
  * Parse IP string
  * @return ip in hex
  */
-uint32_t Quectel_EC2x::str_to_u32ip(char* str)
+uint32_t Quectel_LTE::str_to_u32ip(char* str)
 {
     uint32_t ip = 0;
     char *p = (char*)str;
@@ -208,7 +249,7 @@ uint32_t Quectel_EC2x::str_to_u32ip(char* str)
  * @param port is remote server port
  * @return true for success, false for failure
 */
-boolean Quectel_EC2x::sockOpen(const char *host, int port, Socket_type connectType )
+boolean Quectel_LTE::sockOpen(const char *host, int port, Socket_type connectType )
 {
   /**
    * @breif EC2x has 12 socketid can be used, in this function we always use socketid NO.0.
@@ -281,7 +322,7 @@ boolean Quectel_EC2x::sockOpen(const char *host, int port, Socket_type connectTy
  * @return true for success, false for failure.
 */
 
-boolean Quectel_EC2x::sockClose(int sockid)
+boolean Quectel_LTE::sockClose(int sockid)
 {
   // Only socketId 0 were used, so we need to close socketId 0
   if(!_AtSerial.WriteCommandAndWaitForResponse("AT+QICLOSE=0\r\n", "OK", CMD, 10000))
@@ -300,7 +341,7 @@ boolean Quectel_EC2x::sockClose(int sockid)
  * @return true for success, false for failure.
  * 
 */
-boolean Quectel_EC2x::sockWrite(uint8_t sockid, char *data, uint16_t dataSize)
+boolean Quectel_LTE::sockWrite(uint8_t sockid, char *data, uint16_t dataSize)
 {
   if(sockid < 0 || sockid > 11) return false;
   if(data == NULL || data[0] == '\0' || dataSize <= 0) return false;
@@ -310,24 +351,47 @@ boolean Quectel_EC2x::sockWrite(uint8_t sockid, char *data, uint16_t dataSize)
   sprintf(txBuf, "AT+QISEND=0,%d\r\n", dataSize);
   if(!_AtSerial.WriteCommandAndWaitForResponse(txBuf, ">", CMD, 500, UART_DEBUG)) return false;
   _AtSerial.WriteCommand(data);
-  if(!_AtSerial.WaitForResponse("SEND OK\r\n", CMD, 5000)) return false;
+  if(!_AtSerial.WaitForResponse("SEND OK\r\n", CMD, 1000, UART_DEBUG)) return false;
    
   return true;
 }
 
-boolean Quectel_EC2x::sockWrite(uint8_t sockid, char *data)
+boolean Quectel_LTE::sockWrite(uint8_t sockid, char *data)
 {
   sockWrite(sockid, data, strlen(data));
 }
 
 
-boolean Quectel_EC2x::sockReceive(uint8_t sockid, char *data, uint16_t dataSize)
+uint16_t Quectel_LTE::sockReceive(uint8_t sockid, char *data, uint16_t dataSize, uint32_t timeoutMs)
 {
+  char *p;
+  uint16_t rxSize = 0;
   char txBuf[32] = {'\0'};
+  char rxBuf[dataSize + 64];  
+  _AtSerial.CleanBuffer(rxBuf, sizeof(rxBuf));
 
   sprintf(txBuf, "AT+QIRD=%d,%d\r\n", sockid, dataSize);
-  _AtSerial.WriteCommand(txBuf);
+  _AtSerial.WriteCommand(txBuf);  
+  _AtSerial.Read(rxBuf, dataSize + 64, timeoutMs);  
+
+  if(NULL == (p = strstr(rxBuf, "+QIRD:")))
+  {
+    return 0;
+  }
+
+  Log("DBG: ");
+  Logln(p);
   
+  if(1 != sscanf(p, "+QIRD: %d(.*)", &rxSize))
+  {
+    Logln("Can not parse +QIRD:");
+    return 0;
+  }
+  
+  memcpy(data, rxBuf, rxSize);
+  data[rxSize] = '\0';
+  
+  return rxSize; 
 }
 
 /**
@@ -340,7 +404,7 @@ boolean Quectel_EC2x::sockReceive(uint8_t sockid, char *data, uint16_t dataSize)
  * 
  * @return true for success, false for failure.
 */
-boolean Quectel_EC2x::udpSendTo(uint8_t sockid, char *host, uint16_t port, char oneByte)
+boolean Quectel_LTE::udpSendTo(uint8_t sockid, char *host, uint16_t port, char oneByte)
 {
 
 }
@@ -356,14 +420,14 @@ boolean Quectel_EC2x::udpSendTo(uint8_t sockid, char *host, uint16_t port, char 
  * 
  * @return true for success, false for failure.
 */
-boolean Quectel_EC2x::udpSendTo(uint8_t sockid, char *host, uint16_t port, char *data, uint16_t dataSize)
+boolean Quectel_LTE::udpSendTo(uint8_t sockid, char *host, uint16_t port, char *data, uint16_t dataSize)
 {
 
 }
 
 
 
-boolean Quectel_EC2x::close_GNSS()
+boolean Quectel_LTE::close_GNSS()
 {
   int errCounts = 0;
 
@@ -382,14 +446,14 @@ boolean Quectel_EC2x::close_GNSS()
 /**
  * Aquire GPS sentence
  */
-boolean Quectel_EC2x::dataFlowMode(void)
+boolean Quectel_LTE::dataFlowMode(void)
 {
     // Make sure that "#define UART_DEBUG" is uncomment.
     _AtSerial.WriteCommand("AT+QGPSLOC?\r\n");
     return _AtSerial.WaitForResponse("OK", CMD, 2000, true);
 }
 
-boolean Quectel_EC2x::open_GNSS(void)
+boolean Quectel_LTE::open_GNSS(void)
 {
   int errCounts = 0;
 
@@ -408,7 +472,7 @@ boolean Quectel_EC2x::open_GNSS(void)
 /** 
  * Get coordinate infomation
  */
-boolean Quectel_EC2x::getCoordinate(void)
+boolean Quectel_LTE::getCoordinate(void)
 {
   int tmp = 0;
   char *p = NULL;
@@ -485,7 +549,7 @@ boolean Quectel_EC2x::getCoordinate(void)
 /**
  * Convert double coordinate data to string
  */
-void Quectel_EC2x::doubleToString(double longitude, double latitude)
+void Quectel_LTE::doubleToString(double longitude, double latitude)
 {
   int u8_lon = (int)longitude;
   int u8_lat = (int)latitude;
@@ -499,7 +563,7 @@ void Quectel_EC2x::doubleToString(double longitude, double latitude)
 /**
  * Set outpu sentences in NMEA mode
 */
-boolean Quectel_EC2x::enable_NMEA_mode()
+boolean Quectel_LTE::enable_NMEA_mode()
 {
   if(!_AtSerial.WriteCommandAndWaitForResponse("AT+QGPSCFG=\"nmeasrc\",1\r\n", "OK", CMD, 2000)){
         return false;
@@ -510,7 +574,7 @@ boolean Quectel_EC2x::enable_NMEA_mode()
 /**
  * Disable NMEA mode
 */
-boolean Quectel_EC2x::disable_NMEA_mode()
+boolean Quectel_LTE::disable_NMEA_mode()
 {
   if(!_AtSerial.WriteCommandAndWaitForResponse("AT+QGPSCFG=\"nmeasrc\",0\r\n", "OK", CMD, 2000)){
         return false;
@@ -521,7 +585,7 @@ boolean Quectel_EC2x::disable_NMEA_mode()
 /**
  *  Request NMEA data and save the responce sentence
 */
-boolean Quectel_EC2x::NMEA_read_and_save(const char *type, char *save_buff)
+boolean Quectel_LTE::NMEA_read_and_save(const char *type, char *save_buff)
 {
   char recv_buff[192];
   char send_buff[32];
@@ -553,7 +617,7 @@ boolean Quectel_EC2x::NMEA_read_and_save(const char *type, char *save_buff)
 /**
  * Read NMEA data
 */
-boolean Quectel_EC2x::read_NMEA(NMEA_type type, char *save_buff)
+boolean Quectel_LTE::read_NMEA(NMEA_type type, char *save_buff)
 {
   switch(type){
     case GGA:                
@@ -587,7 +651,7 @@ boolean Quectel_EC2x::read_NMEA(NMEA_type type, char *save_buff)
  * GSV sentence gonna be 6 lines, that's too much content to save as other NMEA data.
  * save_buff should be 512 Bytes size at least. 
 */
-boolean Quectel_EC2x::read_NMEA_GSV(char *save_buff)
+boolean Quectel_LTE::read_NMEA_GSV(char *save_buff)
 {
   char recv_buff[512];
   char *p;

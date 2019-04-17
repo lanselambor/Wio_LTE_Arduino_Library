@@ -1,93 +1,102 @@
-#include "quectel_ec2x.h"
 
-Quectel_EC2x ec2x;
+#include "Quectel_LTE.h"
+
+Quectel_LTE LTE;
 
 // const char apn[10] = "CMNET";
 const char apn[10] = "UNINET";
-const char URL[100] = "example.com";
-char http_cmd[100] = "GET / HTTP/1.0\n\r\n\r";
-int port = 80;
+const char URL[100] = "45.77.14.150";
+char http_cmd[100] = "GET /media/uploads/mbed_official/hello.txt HTTP/1.0\n\r\n\r";
+int port = 5000;
 
-int ret = 0;
+char data[128] = {'\0'};
+uint16_t inSize = 0;
 
 void setup() {  
   Serial.begin(115200);
   while(!Serial);
-  Serial.println("-- Wio LTE --------------------");
-  
-  ec2x.Init();
+  Serial.println("## TCP Client Demo");
 
-  while(false == ec2x.isAlive()){
-    Serial.println("### Waitting for module to alvie");
-    delay(1000);
-  }
+  LTE.initialize();
 
-  while(!ec2x.waitForNetworkRegister())
+  Serial.println("## Waitting for module to alvie..."); 
+  if(!LTE.isAlive(10000)) 
   {
-    Serial.println("### Failed to register network ###");
-    return;
-  }
-  Serial.println("### Initialize done");
-
-  if(!ec2x.Deactivate())
-  {
-    Serial.println("### Failed to deactive network");
+    Serial.println("## Module not alive");
     return;
   }
 
-  if(!ec2x.Activate(apn, "", ""))
+  Serial.println("## Wait for network ready");
+  while(!LTE.waitForNetworkRegister())
   {
-    Serial.println("### Failed to active opeator");
+    Serial.println("## Network not ready");
     return;
   }
 
-  if(!ec2x.getIPAddr())
+  Serial.println("## Active network");
+  if(!LTE.Activate(apn, "", ""))
+  {
+    Serial.println("### Failed to active network");
+    return;
+  }
+
+  if(!LTE.getIPAddr())
   {    
-    Serial.println("### Failed to get ip.");
     return;
   }
-  Serial.print("### IP: ");
-  Serial.println(ec2x._str_ip);
+  Serial.print("## IP: ");
+  Serial.println(LTE._str_ip);
 
-  if(!ec2x.getOperator())
+  if(!LTE.getOperator())
   {
-    Serial.println("### Failed to get operator.");
     return;
   }
-  Serial.print("### Operator: ");
-  Serial.println(ec2x._operator);
+  Serial.print("## Operator: ");
+  Serial.println(LTE._operator);
 
-  if(ec2x.sockOpen(URL, port, TCP)) 
-  {        
-    Stopwatch ws;
-    ws.Restart();
-
-    ec2x.sockWrite(0, http_cmd);    
-    ec2x.sockReceive(0, NULL, 1500);     
-    while(ws.ElapsedMilliseconds() < 10000)
-    {
-      ec2x._AtSerial.AT_ByPass();
-    }
-    
-    if(!ec2x.sockClose(0))
-    {
-      Serial.println("Socket close Error!");
-      return;
-    }
-    Serial.println("Socket closed");
-    
-  } 
-  else {
-    Serial.println("Connect Error!");
-  }
-  // int signal = 0;;
-  // wiolte.getSignalStrength(&signal);
-  // Serial.print("Signale: ");
-  // Serial.println(signal);
   
+  Serial.println("## Socket open");
+  if(!LTE.sockOpen(URL, port, TCP)) 
+  {
+    Serial.println("### Socket open error");
+    goto sock_err;
+  }
+
+  Serial.println("## Socket write");
+  if(!LTE.sockWrite(0, http_cmd))
+  {
+    Serial.println("### Socket write error");
+    goto sock_err;
+  }
+  delay(1000);
+
+  Serial.println("## Socket receive");   
+  while(true)
+  {
+    LTE._AtSerial.CleanBuffer(data, 128);
+    inSize = LTE.sockReceive(0, data, 128, 2000);
+    Serial.println(data);    
+    if(128 > inSize)
+    {      
+      break;
+    } 
+  } 
+
+  Serial.println("## Socket close");
+  if(!LTE.sockClose(0))
+  {
+    Serial.println("### Socket close error");
+  }
+
+sock_err:
+  Serial.println("## Socket close");
+  if(!LTE.sockClose(0))
+  {
+    Serial.println("### Socket close error");
+  }  
 }
 
 void loop() {
   /* Debug */
-  ec2x._AtSerial.AT_ByPass();
+  LTE._AtSerial.AT_Bypass();
 }
