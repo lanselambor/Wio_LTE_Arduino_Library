@@ -110,7 +110,7 @@ void  AtSerial::CleanBuffer(char* buffer, uint16_t count)
 	}
 }
 
-void  AtSerial::WriteCommand(char data)
+void AtSerial::WriteCommand(char data)
 {
 	_Serial->write(data);
 }	
@@ -122,6 +122,15 @@ void  AtSerial::WriteCommand(const char* cmd)
 			WriteCommand(cmd[i]);
 	}	
 }
+
+void AtSerial::WriteCommand(char *data, uint16_t dataSize)
+{
+	for(uint16_t i = 0; i < dataSize; i++)
+	{
+		_Serial->write(data[i]);
+	}	
+}	
+
 void  AtSerial::WriteCommand(const __FlashStringHelper* cmd)
 {
 	int i = 0;
@@ -132,7 +141,7 @@ void  AtSerial::WriteCommand(const __FlashStringHelper* cmd)
   }
 }
 
-void  AtSerial::WriteEndMark(void)
+void AtSerial::WriteEndMark(void)
 {
 	WriteCommand((char)26);
 }

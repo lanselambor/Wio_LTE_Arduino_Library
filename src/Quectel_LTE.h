@@ -5,6 +5,10 @@
 #include "Stopwatch.h"
 #include "AtSerial.h"
 
+
+#define MAX_TXBUF_LEN 1024
+#define MAX_RXBUF_LEN 1024
+
 #define STR_AT	"AT"
 #define STR_OK	"OK"
 #define STR_ERR	"ERROR"
@@ -52,6 +56,8 @@ class Quectel_LTE
 		char _user[32] = {'\0'};
 		char _passwd[32] = {'\0'};
         char _operator[32] = {'\0'};
+        char _TxBuf[MAX_TXBUF_LEN] = {0};
+        char _RxBuf[MAX_RXBUF_LEN] = {0};
 
         double longitude;
         double latitude;
@@ -85,7 +91,7 @@ class Quectel_LTE
         boolean sockClose(int sockid);
         boolean sockWrite(uint8_t sockid, char *data, uint16_t dataSize);
         boolean sockWrite(uint8_t sockid, char *data);
-        uint16_t sockReceive(uint8_t sockid, char *data, uint16_t dataSize, uint32_t timeoutMs );
+        uint16_t sockReceive(uint8_t sockid, char *data, uint16_t dataSize, uint32_t timeoutMs=100);
         boolean udpSendTo(uint8_t sockid, char *host, uint16_t port, char oneByte);               
         boolean udpSendTo(uint8_t sockid, char *host, uint16_t port, char *data, uint16_t dataSize);
 

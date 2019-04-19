@@ -9,8 +9,7 @@ Quectel_LTE::Quectel_LTE() : _AtSerial(&Serial1)
 
 void Quectel_LTE::initialize()
 {
-  _AtSerial._Serial->begin(115200);
-  initialAtCommands();
+  _AtSerial._Serial->begin(115200);  
 }
 
 bool Quectel_LTE::initialAtCommands(void)
@@ -78,6 +77,8 @@ boolean Quectel_LTE::waitForNetworkRegister(uint32_t timeout)
     Stopwatch sw;
     sw.Restart();
 
+    initialAtCommands();
+
     // Check CS Registration
     while(true)
     {
@@ -86,7 +87,6 @@ boolean Quectel_LTE::waitForNetworkRegister(uint32_t timeout)
         {
             break;
         }
-        delay(100);
         if (sw.ElapsedMilliseconds() >= (unsigned long)timeout) return RET_ERR;
     }
 
@@ -99,7 +99,6 @@ boolean Quectel_LTE::waitForNetworkRegister(uint32_t timeout)
         {
             break;
         }
-        delay(100);
         if (sw.ElapsedMilliseconds() >= (unsigned long)timeout) return RET_ERR;
     }
   
@@ -286,31 +285,22 @@ boolean Quectel_LTE::sockOpen(const char *host, int port, Socket_type connectTyp
       return false;
   }
 
-  uint8_t errCount = 0;
-  char txBuf[128] = {0};
-  char rxBuf[128] = {0};
-  char *p;
+  _AtSerial.CleanBuffer(_TxBuf, sizeof(_TxBuf));
+  _AtSerial.CleanBuffer(_RxBuf, sizeof(_RxBuf));
   
+  //TODO - if socketId 0 has been used, then deactive PDP then re-open socket
   _AtSerial.WriteCommand("AT+QISTATE?\r\n");
-  _AtSerial.Read((char*)rxBuf, sizeof(rxBuf), 2000);  
+  _AtSerial.Read((char*)_RxBuf, sizeof(_RxBuf), 500);
+  if(NULL != strstr(_RxBuf, "+QISTATE:")) return false;
 
-  //if socketId 0 has been used, then deactive PDP then re-open socket
-  if(NULL != (p = strstr(rxBuf, "+QISTATE:"))) return false;  
-
-
-  if(connectType == TCP) { sprintf(txBuf, "AT+QIOPEN=1,0,\"%s\",\"%s\",%d\r\n", typeStr, host, port); }
-  else if(connectType == UDP) { sprintf(txBuf, "AT+QIOPEN=1,0,\"%s\",\"%s\",%d\r\n", typeStr, host, port); }
-  else { return false; } 
-  
-  DEBUG(txBuf);
-  while(!_AtSerial.WriteCommandAndWaitForResponse(txBuf, "+QIOPEN: 0", CMD, 10000)) {// connect tcp      
+  if(connectType == TCP) { sprintf(_TxBuf, "AT+QIOPEN=1,0,\"%s\",\"%s\",%d\r\n", typeStr, host, port); }
+  else if(connectType == UDP) { sprintf(_TxBuf, "AT+QIOPEN=1,0,\"%s\",\"%s\",%d\r\n", typeStr, host, port); }
+  else { return false; }   
+  DEBUG(_TxBuf);
+  if(!_AtSerial.WriteCommandAndWaitForResponse(_TxBuf, "+QIOPEN: 0,0", CMD, 10000, UART_DEBUG)) 
+  {
       ERROR("ERROR:QIOPEN");
-      if(errCount > 3){
-          return false;
-      }
-      errCount++;
-      // Deactive
-  }
+  }  
 
   return true;
 }
@@ -350,7 +340,9 @@ boolean Quectel_LTE::sockWrite(uint8_t sockid, char *data, uint16_t dataSize)
 
   sprintf(txBuf, "AT+QISEND=0,%d\r\n", dataSize);
   if(!_AtSerial.WriteCommandAndWaitForResponse(txBuf, ">", CMD, 500, UART_DEBUG)) return false;
-  _AtSerial.WriteCommand(data);
+  // char *p = (char *)data;
+  // while(*p != '\0') _AtSerial.WriteCommand(*(p++));
+  _AtSerial.WriteCommand(data, dataSize);
   if(!_AtSerial.WaitForResponse("SEND OK\r\n", CMD, 1000, UART_DEBUG)) return false;
    
   return true;
@@ -365,30 +357,42 @@ boolean Quectel_LTE::sockWrite(uint8_t sockid, char *data)
 uint16_t Quectel_LTE::sockReceive(uint8_t sockid, char *data, uint16_t dataSize, uint32_t timeoutMs)
 {
   char *p;
-  uint16_t rxSize = 0;
-  char txBuf[32] = {'\0'};
-  char rxBuf[dataSize + 64];  
-  _AtSerial.CleanBuffer(rxBuf, sizeof(rxBuf));
+  int rxSize = 0;  
+  _AtSerial.CleanBuffer(_TxBuf, sizeof(_TxBuf));
+  _AtSerial.CleanBuffer(_RxBuf, sizeof(_RxBuf));
 
-  sprintf(txBuf, "AT+QIRD=%d,%d\r\n", sockid, dataSize);
-  _AtSerial.WriteCommand(txBuf);  
-  _AtSerial.Read(rxBuf, dataSize + 64, timeoutMs);  
+  sprintf(_TxBuf, "AT+QIRD=%d,%d\r\n", sockid, dataSize);
+  _AtSerial.WriteCommand(_TxBuf);  
+  _AtSerial.Read(_RxBuf, dataSize + 64, timeoutMs);  
 
-  if(NULL == (p = strstr(rxBuf, "+QIRD:")))
+  if(NULL == (p = strstr(_RxBuf, "+QIRD:")))
   {
     return 0;
   }
-
-  Log("DBG: ");
-  Logln(p);
   
-  if(1 != sscanf(p, "+QIRD: %d(.*)", &rxSize))
+  debugPrintOut(p);
+
+  p += 6;
+  rxSize = atoi(p);
+  if(rxSize == -1)
   {
     Logln("Can not parse +QIRD:");
     return 0;
   }
+
+  //goto the next line of the content
+  while(true)
+  {
+    if(*p == '\r') 
+    {
+      p++;
+      break;
+    }
+    if(*p == '\0') return 0;
+    p++;
+  }
   
-  memcpy(data, rxBuf, rxSize);
+  memcpy(data, p, rxSize);
   data[rxSize] = '\0';
   
   return rxSize; 

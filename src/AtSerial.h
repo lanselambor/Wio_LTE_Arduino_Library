@@ -64,6 +64,7 @@ class AtSerial
 		void CleanBuffer(char* buffer, uint16_t count);
 		void WriteCommand(char data);
 		void WriteCommand(const char* cmd);
+		void WriteCommand(char *data, uint16_t dataSize);
 		void WriteCommand(const __FlashStringHelper* cmd);
 		void WriteEndMark(void);
 		bool WaitForResponse(const char* resp, DataType type, unsigned int timeout = DEFAULT_TIMEOUT, bool debug=false);
