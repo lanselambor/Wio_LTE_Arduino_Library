@@ -8,33 +8,22 @@ const char *APN = "UNINET";
 const char *USERNAME = "";
 const char *PASSWD = "";
 
-const char *HOST = "example.com";
+const char *HOST = "arduino.cc";
 int port = 80;
-
-char *param = "GET / HTTP/1.1\r\n\r\n";
-// "Host: example.com\r\n"
-// "Connection:  keep-alive\r\n"
-// "Upgrade-Insecure-Requests: 1\r\n"
-// "Accep:  text/html,application/xhtml+xml,application/xml\r\n"
-// "Accept-Encoding: gzip, deflate\r\n"
-// "Accept-Language: en\r\n"
-// "Content-Type: application/x-www-form-urlencoded\r\n"
-// "cache-control: no-cache\r\n"
-// "Postman-Token: d08eefe0-616d-4afe-964d-45e0f5647e5c\r\n";
+char *param = "GET /asciilogo.txt HTTP/1.1";
 
 char recvData[1024] = {'\0'};
 uint16_t recvSize = 0;
 
-void setup() {  
+void setup() { 
+  delay(200); 
   Serial.begin(115200);
-  while(!Serial);
-
   Serial.println("## TCP Client Demo");
 
   LTE.initialize();
 
-  Serial.println("## Waitting for module to alvie..."); 
-  if(!LTE.isAlive(10000)) 
+  Serial.println("## Waitting for module to alvie...");
+  if(!LTE.isAlive(20000)) 
   {
     Serial.println("## Module not alive");
     return;
@@ -47,6 +36,12 @@ void setup() {
     return;
   }
 
+  if(!LTE.Deactivate())
+  {
+    Serial.println("### Failed to deactive network");
+    return;
+  }
+
   Serial.println("## Active network");
   if(!LTE.Activate(APN, USERNAME, PASSWD))
   {
@@ -54,18 +49,40 @@ void setup() {
     return;
   }
 
+  if(!LTE.getIPAddr())
+  {
+    Serial.println("### ERROR:getIPAddr");
+    return;
+  }
+  Serial.print("## IP:");
+  Serial.println(LTE._str_ip);
+
   Serial.println("## Socket open");
   if(!LTE.sockOpen(HOST, port, TCP)) 
   {
     Serial.println("### Socket open error");
-    goto Exit;
+    return;
   }
+  
+  char data[256] = {'\0'};
+  uint32_t dataLen= 0;
+ 
+  sprintf(data, "%s\n", param); dataLen = strlen(data);
+  sprintf((char *)(data+dataLen), "Host: %s\n", HOST); dataLen = strlen(data);  
+  sprintf((char *)(data+dataLen), "Accept: */*\n"); dataLen = strlen(data);  
+  sprintf((char *)(data+dataLen), "User-Agent: QUECTEL_MODULE\n"); dataLen = strlen(data);  
+  sprintf((char *)(data+dataLen), "Connection: Keep-Alive\n"); dataLen = strlen(data);  
+  sprintf((char *)(data+dataLen), "Content-Type: application/x-www-form-urlencoded\n\n");
 
-  Serial.println("## Socket write");
-  if(!LTE.sockWrite(0, param))
+  Serial.println("## Socket write\r\n");
+  Serial.print("## HTTP Header: ");
+  Serial.print(strlen(data));
+  Serial.println(" Bytes");
+  Serial.println(data);
+  if(!LTE.sockWrite(0, data))
   {
     Serial.println("### Socket write error");
-    goto Exit;
+    return;
   }
   delay(1000);
 
@@ -89,15 +106,6 @@ void setup() {
   {
     Serial.println("### Socket close error");
   }
-  return;   
-
-Exit:
-  Serial.println("## Socket close");
-  if(!LTE.sockClose(0))
-  {
-    Serial.println("### Socket close error");
-  }  
-  return;
 }
 
 void loop() {

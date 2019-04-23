@@ -152,7 +152,7 @@ boolean Quectel_LTE::getIPAddr(void)
     char *p;
     uint8_t i = 0;
     char rxBuf[128] = {'\0'};
-    uint8_t a0, a1, a2, a3;
+    // uint8_t a0, a1, a2, a3;
 
     // Get IP address
     _AtSerial.WriteCommand("AT+QIACT?\r\n");
@@ -250,24 +250,6 @@ uint32_t Quectel_LTE::str_to_u32ip(char* str)
 */
 boolean Quectel_LTE::sockOpen(const char *host, int port, Socket_type connectType )
 {
-  /**
-   * @breif EC2x has 12 socketid can be used, in this function we always use socketid NO.0.
-   * @dataAccessMode:
-   * 
-   * 0.In SOCKET_BUFFER_MODE
-   *  - Use "AT+QISEND=0,len" to send data.
-   *  - Use "AT+QIRD=0,0" to check buffer size and read out data.
-   * 
-   * 1.In SOCKET_DIRECT_PUSH_MODE 
-   *  - Use "AT+QISEND=0,len" to send data
-   *  - Received data will push out directly.
-   * 
-   * 2.In SOCKET_TRANSPARANT_MODE
-   *  - After connect 
-   *  - Write data to Module Serial directly.
-   *  - Any received data will push out directly.
-  */
-
   if(host == NULL || host[0] == '\0') return false;
   if(port < 0 || 65535 < port) return false;
 
@@ -297,10 +279,20 @@ boolean Quectel_LTE::sockOpen(const char *host, int port, Socket_type connectTyp
   else if(connectType == UDP) { sprintf(_TxBuf, "AT+QIOPEN=1,0,\"%s\",\"%s\",%d\r\n", typeStr, host, port); }
   else { return false; }   
   DEBUG(_TxBuf);
-  if(!_AtSerial.WriteCommandAndWaitForResponse(_TxBuf, "+QIOPEN: 0,0", CMD, 10000, UART_DEBUG)) 
+  
+  uint8_t retry = 3;
+  while(retry--)
   {
-      ERROR("ERROR:QIOPEN");
-  }  
+    if(!_AtSerial.WriteCommandAndWaitForResponse(_TxBuf, "+QIOPEN: 0,0", CMD, 10000, UART_DEBUG)) 
+    {
+        ERROR("ERROR:QIOPEN");
+    }  
+    else
+    {
+      break;
+    }    
+  }
+  
 
   return true;
 }

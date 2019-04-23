@@ -96,7 +96,8 @@ class Quectel_LTE
         boolean udpSendTo(uint8_t sockid, char *host, uint16_t port, char *data, uint16_t dataSize);
 
 /************************** HTTP(S) **************************/
-
+        boolean httpGet(char *url, );
+        boolean httpPost(char *url, );
 /************************** MQTT **************************/
 
 /************************** GNSS **************************/

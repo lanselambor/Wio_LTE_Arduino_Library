@@ -1,19 +1,22 @@
-#include "wio_tracker.h"
+#include "Quectel_LTE.h"
 
 
-WioTracker wio = WioTracker();
+Quectel_LTE LTE;
 
 void setup() {
-  Serial.println("Begin...");
-  wio.initialize();
-  while(false == wio.Check_If_Power_On()){
-    Serial.println("Waitting for module to alvie...");
-    delay(1000);
-  }  
-  Serial.println("Power On O.K!");
+  delay(200);
+  Serial.begin(115200);  
+  Serial.println("## Demo AT Bypass");
+  
+  LTE.initialize();
+  if(LTE.isAlive(1000))
+  {
+    Serial.println("### Module not alived");
+    return;
+  }
 }
 
 void loop() {
   /* Debug */
-  AT_Bypass();
+  LTE._AtSerial.AT_Bypass();
 }
