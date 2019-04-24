@@ -32,7 +32,7 @@ bool Quectel_LTE::initialAtCommands(void)
  *      true on success
  *      false on error
  */
-boolean Quectel_LTE::isAlive(uint32_t timeout)
+bool Quectel_LTE::isAlive(uint32_t timeout)
 {
     Stopwatch sw;
     sw.Restart();
@@ -72,7 +72,7 @@ bool Quectel_LTE::checkSIMStatus(void)
     return true;
 }
 
-boolean Quectel_LTE::waitForNetworkRegister(uint32_t timeout)
+bool Quectel_LTE::waitForNetworkRegister(uint32_t timeout)
 {
     Stopwatch sw;
     sw.Restart();
@@ -86,8 +86,9 @@ boolean Quectel_LTE::waitForNetworkRegister(uint32_t timeout)
         _AtSerial.WriteCommandAndWaitForResponse("AT+CEREG?\r\n", "+CEREG: 0,5", CMD, 500)) // Roaming
         {
             break;
-        }
+        }        
         if (sw.ElapsedMilliseconds() >= (unsigned long)timeout) return RET_ERR;
+        Log(".");
     }
 
     sw.Restart();
@@ -98,14 +99,15 @@ boolean Quectel_LTE::waitForNetworkRegister(uint32_t timeout)
         _AtSerial.WriteCommandAndWaitForResponse("AT+CGREG?\r\n", "+CGREG: 0,5", CMD, 500)) // Roaming
         {
             break;
-        }
+        }        
         if (sw.ElapsedMilliseconds() >= (unsigned long)timeout) return RET_ERR;
+        Log(".");
     }
   
   return RET_OK;
 }
 
-boolean Quectel_LTE::Activate(const char* APN, const char* userName, const char* password, long waitForRegistTimeout)
+bool Quectel_LTE::Activate(const char* APN, const char* userName, const char* password, long waitForRegistTimeout)
 {
     char sendBuffer[64] = {0};
 
@@ -134,7 +136,7 @@ boolean Quectel_LTE::Activate(const char* APN, const char* userName, const char*
 	return RET_OK;
 }
 
-boolean Quectel_LTE::Deactivate()
+bool Quectel_LTE::Deactivate()
 {
     if (!_AtSerial.WriteCommandAndWaitForResponse("AT+QIDEACT=1\r\n", "OK", CMD, 500, UART_DEBUG)) return RET_ERR;
 
@@ -144,7 +146,7 @@ boolean Quectel_LTE::Deactivate()
 /**
  * Get IP address
  */
-boolean Quectel_LTE::getIPAddr(void)
+bool Quectel_LTE::getIPAddr(void)
 {
     // AT+QIACT?
     // +QIACT: 1,1,1,"10.72.134.66"
@@ -190,7 +192,7 @@ boolean Quectel_LTE::getIPAddr(void)
 /**
  * Get operator name
 */
-boolean Quectel_LTE::getOperator()
+bool Quectel_LTE::getOperator()
 {
     // AT+COPS?
     // +COPS: 0,0,"CHN-UNICOM",7
@@ -240,6 +242,42 @@ uint32_t Quectel_LTE::str_to_u32ip(char* str)
     return ip;
 }
 
+/** get Signal Strength from SIM900 (see AT command: AT+CSQ) as integer
+*  @param
+*  @returns
+*      true on success
+*      false on error
+*/
+bool Quectel_LTE::getSignalStrength(int *buffer)
+{
+    //AT+CSQ                        --> 6 + CR = 10
+    //+CSQ: <rssi>,<ber>            --> CRLF + 5 + CRLF = 9                     
+    //OK                            --> CRLF + 2 + CRLF =  6
+
+    byte i = 0;
+    char Buffer[26];
+    char *p, *s;
+    char buffers[4];
+    _AtSerial.FlushSerial();
+    _AtSerial.WriteCommand("AT+CSQ\r");
+    _AtSerial.CleanBuffer(Buffer, 26);
+    _AtSerial.Read(Buffer, 26, 1000);
+    if (NULL != (s = strstr(Buffer, "+CSQ:"))) {
+        s = strstr((char *)(s), " ");
+        s = s + 1;  //We are in the first phone number character 
+        p = strstr((char *)(s), ","); //p is last character """
+        if (NULL != s) {
+            i = 0;
+            while (s < p) {
+                buffers[i++] = *(s++);
+            }
+            buffers[i] = '\0';
+        }
+        *buffer = atoi(buffers);
+        return true;
+    }
+    return false;
+}
 
 /**
  * Set host server by ip/domain and port, then connect to the server 
@@ -248,7 +286,7 @@ uint32_t Quectel_LTE::str_to_u32ip(char* str)
  * @param port is remote server port
  * @return true for success, false for failure
 */
-boolean Quectel_LTE::sockOpen(const char *host, int port, Socket_type connectType )
+bool Quectel_LTE::sockOpen(const char *host, int port, Socket_type connectType )
 {
   if(host == NULL || host[0] == '\0') return false;
   if(port < 0 || 65535 < port) return false;
@@ -304,10 +342,14 @@ boolean Quectel_LTE::sockOpen(const char *host, int port, Socket_type connectTyp
  * @return true for success, false for failure.
 */
 
-boolean Quectel_LTE::sockClose(int sockid)
+bool Quectel_LTE::sockClose(int sockid)
 {
   // Only socketId 0 were used, so we need to close socketId 0
-  if(!_AtSerial.WriteCommandAndWaitForResponse("AT+QICLOSE=0\r\n", "OK", CMD, 10000))
+  _AtSerial.WriteCommand("AT+QICLOSE=");
+  _AtSerial.WriteCommand((uint8_t)sockid);
+  _AtSerial.WriteCommand("\r\n");
+
+  if(!_AtSerial.WaitForResponse("OK", CMD, 10000))
   {
     return false;
   }
@@ -323,7 +365,7 @@ boolean Quectel_LTE::sockClose(int sockid)
  * @return true for success, false for failure.
  * 
 */
-boolean Quectel_LTE::sockWrite(uint8_t sockid, char *data, uint16_t dataSize)
+bool Quectel_LTE::sockWrite(uint8_t sockid, char *data, uint16_t dataSize)
 {
   if(sockid < 0 || sockid > 11) return false;
   if(data == NULL || data[0] == '\0' || dataSize <= 0) return false;
@@ -336,13 +378,14 @@ boolean Quectel_LTE::sockWrite(uint8_t sockid, char *data, uint16_t dataSize)
   // while(*p != '\0') _AtSerial.WriteCommand(*(p++));
   _AtSerial.WriteCommand(data, dataSize);
   if(!_AtSerial.WaitForResponse("SEND OK\r\n", CMD, 1000, UART_DEBUG)) return false;
-   
+  if(!_AtSerial.WaitForResponse("+QIURC: \"recv\",0", CMD, 5000, UART_DEBUG)) return false;
+
   return true;
 }
 
-boolean Quectel_LTE::sockWrite(uint8_t sockid, char *data)
+bool Quectel_LTE::sockWrite(uint8_t sockid, char *data)
 {
-  sockWrite(sockid, data, strlen(data));
+  return sockWrite(sockid, data, strlen(data));
 }
 
 
@@ -400,7 +443,7 @@ uint16_t Quectel_LTE::sockReceive(uint8_t sockid, char *data, uint16_t dataSize,
  * 
  * @return true for success, false for failure.
 */
-boolean Quectel_LTE::udpSendTo(uint8_t sockid, char *host, uint16_t port, char oneByte)
+bool Quectel_LTE::udpSendTo(uint8_t sockid, char *host, uint16_t port, char oneByte)
 {
 
 }
@@ -416,14 +459,33 @@ boolean Quectel_LTE::udpSendTo(uint8_t sockid, char *host, uint16_t port, char o
  * 
  * @return true for success, false for failure.
 */
-boolean Quectel_LTE::udpSendTo(uint8_t sockid, char *host, uint16_t port, char *data, uint16_t dataSize)
+bool Quectel_LTE::udpSendTo(uint8_t sockid, char *host, uint16_t port, char *data, uint16_t dataSize)
 {
 
 }
 
+/**
+ * @brief Set url wait for connecting
+ * @param url - const string of url 
+ * @return true for setting url successfully, false for setting url failed
+*/
+bool Quectel_LTE::HttpSetUrl(char* url)
+{
+	char txBuf[128] = {'\0'};
+  
+  sprintf(txBuf, "AT+QHTTPURL=%d\r\n", strlen(url));
+  if(!_AtSerial.WriteCommandAndWaitForResponse(txBuf, "CONNECT\r\n", CMD, 500, UART_DEBUG)) return false;
+
+  _AtSerial.WriteCommand(url, strlen(url));
+	if(!_AtSerial.WaitForResponse("OK\r\n", CMD, 1000, UART_DEBUG)) return false;
+
+	return true;
+}
+
+int HttpGet(const char* url, char* data, int dataSize, long timeout = 60000);
 
 
-boolean Quectel_LTE::close_GNSS()
+bool Quectel_LTE::close_GNSS()
 {
   int errCounts = 0;
 
@@ -442,14 +504,14 @@ boolean Quectel_LTE::close_GNSS()
 /**
  * Aquire GPS sentence
  */
-boolean Quectel_LTE::dataFlowMode(void)
+bool Quectel_LTE::dataFlowMode(void)
 {
     // Make sure that "#define UART_DEBUG" is uncomment.
     _AtSerial.WriteCommand("AT+QGPSLOC?\r\n");
-    return _AtSerial.WaitForResponse("OK", CMD, 2000, true);
+    return _AtSerial.WaitForResponse("OK", CMD, 2000, DEFAULT_INCHAR_TIMEOUT, true);
 }
 
-boolean Quectel_LTE::open_GNSS(void)
+bool Quectel_LTE::open_GNSS(void)
 {
   int errCounts = 0;
 
@@ -468,7 +530,7 @@ boolean Quectel_LTE::open_GNSS(void)
 /** 
  * Get coordinate infomation
  */
-boolean Quectel_LTE::getCoordinate(void)
+bool Quectel_LTE::getCoordinate(void)
 {
   int tmp = 0;
   char *p = NULL;
@@ -559,7 +621,7 @@ void Quectel_LTE::doubleToString(double longitude, double latitude)
 /**
  * Set outpu sentences in NMEA mode
 */
-boolean Quectel_LTE::enable_NMEA_mode()
+bool Quectel_LTE::enable_NMEA_mode()
 {
   if(!_AtSerial.WriteCommandAndWaitForResponse("AT+QGPSCFG=\"nmeasrc\",1\r\n", "OK", CMD, 2000)){
         return false;
@@ -570,7 +632,7 @@ boolean Quectel_LTE::enable_NMEA_mode()
 /**
  * Disable NMEA mode
 */
-boolean Quectel_LTE::disable_NMEA_mode()
+bool Quectel_LTE::disable_NMEA_mode()
 {
   if(!_AtSerial.WriteCommandAndWaitForResponse("AT+QGPSCFG=\"nmeasrc\",0\r\n", "OK", CMD, 2000)){
         return false;
@@ -581,31 +643,32 @@ boolean Quectel_LTE::disable_NMEA_mode()
 /**
  *  Request NMEA data and save the responce sentence
 */
-boolean Quectel_LTE::NMEA_read_and_save(const char *type, char *save_buff)
+bool Quectel_LTE::NMEA_read_and_save(const char *type, char *data)
 {
-  char recv_buff[192];
-  char send_buff[32];
+  char rxBuf[192] = {'\0'};  
   char *p = NULL;
   uint16_t i = 0;
 
-  _AtSerial.CleanBuffer(recv_buff,192);
-  _AtSerial.CleanBuffer(send_buff,32);  
-  sprintf(send_buff, "AT+QGPSGNMEA=\"%s\"\r\n", type);                                                                                                                                                                                          
-  _AtSerial.WriteCommand(send_buff);  // Send command
-  _AtSerial.ReadUntil(recv_buff, 192, "OK", 1);  // Save response data
+  _AtSerial.CleanBuffer(rxBuf, sizeof(rxBuf)); 
+  _AtSerial.WriteCommand("AT+QGPSGNMEA=");
+  _AtSerial.WriteCommand("\"");
+  _AtSerial.WriteCommand(type);
+  _AtSerial.WriteCommand("\"\r\n");
+                                                                                                                                                                                          
+  _AtSerial.ReadUntil(rxBuf, sizeof(rxBuf), "OK", 1000);  // Save response data
   // Serial.print("##DEBUG _AtSerial.ReadUntil: ");
-  // Serial.println(recv_buff);
-  if(NULL == (p = strstr(recv_buff, "+QGPSGNMEA:")))
+  // Serial.println(rxBuf);
+  if(NULL == (p = strstr(rxBuf, "+QGPSGNMEA:")))
   {
     return false;
   }
-  p += 12;  
+  p += 12;
   while((*(p) != '\n') && (*(p) != '\0')) {  // If receive "+QGPSGNMEA:", than keep saving the NMEA sentence 
-    save_buff[i++] = *(p++);
+    data[i++] = *(p++);
   }
-  save_buff[i] = '\0';
-  // Serial.print("##DEBUG save_buff: ");
-  // Serial.println(save_buff);
+  data[i] = '\0';
+  // Serial.print("##DEBUG data: ");
+  // Serial.println(data);
   return true;
 
 } 
@@ -613,7 +676,7 @@ boolean Quectel_LTE::NMEA_read_and_save(const char *type, char *save_buff)
 /**
  * Read NMEA data
 */
-boolean Quectel_LTE::read_NMEA(NMEA_type type, char *save_buff)
+bool Quectel_LTE::read_NMEA(NMEA_type type, char *save_buff)
 {
   switch(type){
     case GGA:                
@@ -647,30 +710,28 @@ boolean Quectel_LTE::read_NMEA(NMEA_type type, char *save_buff)
  * GSV sentence gonna be 6 lines, that's too much content to save as other NMEA data.
  * save_buff should be 512 Bytes size at least. 
 */
-boolean Quectel_LTE::read_NMEA_GSV(char *save_buff)
+bool Quectel_LTE::read_NMEA_GSV(char *data)
 {
-  char recv_buff[512];
+  char rxBuf[512] = {'\0'};
   char *p;
   uint16_t i = 0;
 
-  _AtSerial.CleanBuffer(recv_buff,192);                                                                                                                                                                                                                  
+  _AtSerial.CleanBuffer(rxBuf, sizeof(rxBuf));                                                                                                                                                                                                                  
   _AtSerial.WriteCommand("AT+QGPSGNMEA=\"GSV\"\r\n");  // Send command
-  _AtSerial.ReadUntil(recv_buff, 512, "OK", 1);  // Save response data  
-  // Serial.print("##DEBUG _AtSerial.ReadUntil: ");
-  // Serial.println(recv_buff);
+  _AtSerial.ReadUntil((char *)rxBuf, 512, "OK", 1000);  // Save response data 
 
-  if(NULL == (p = strstr(recv_buff, "+QGPSGNMEA:")))
+  if(NULL == (p = strstr(rxBuf, "+QGPSGNMEA:")))
   {
     return false;
   }
 
-  // while(NULL != (p = strstr((recv_buff+i), "+QGPSGNMEA:")))
   while(NULL != (p = strstr(p, "+QGPSGNMEA:")))
-  {
-    p += 12;    
+  {    
+    p += strlen("+QGPSGNMEA:");       
     while((*(p) != '\n') && (*(p) != '\0')) {  // If receive "+QGPSGNMEA:", than keep saving the NMEA sentence 
-      save_buff[i++] = *(p++);
+      data[i++] = *(p++);
     }
+    // memcpy((uint8_t *)data, p, strlen(p));
   }
   
   // Serial.print("##DEBUG save_buff: ");

@@ -5,7 +5,8 @@
 #include "Stopwatch.h"
 #include "board_config.h"
 
-#define DEFAULT_TIMEOUT           1000   //miliseconds
+#define DEFAULT_TIMEOUT           (1000)   //miliseconds
+#define DEFAULT_INCHAR_TIMEOUT    (500)   //miliseconds
 
 #if defined (ARDUINO_ARCH_SAMD)
 	#define _debugSerial Serial
@@ -60,14 +61,14 @@ class AtSerial
 		void FlushSerial();
 		uint16_t ReadLine(char *buffer, int count, unsigned int timeout = DEFAULT_TIMEOUT);
 		uint16_t ReadUntil(char *buffer, int count, char *pattern, unsigned int timeout = DEFAULT_TIMEOUT);
-		uint16_t Read(char* buffer,uint8_t count, uint32_t timeout = DEFAULT_TIMEOUT);
+		uint16_t Read(char* buffer,uint8_t count, uint32_t timeout = DEFAULT_TIMEOUT, uint16_t inchar_timeout = 200);
 		void CleanBuffer(char* buffer, uint16_t count);
 		void WriteCommand(char data);
 		void WriteCommand(const char* cmd);
 		void WriteCommand(char *data, uint16_t dataSize);
 		void WriteCommand(const __FlashStringHelper* cmd);
 		void WriteEndMark(void);
-		bool WaitForResponse(const char* resp, DataType type, unsigned int timeout = DEFAULT_TIMEOUT, bool debug=false);
+		bool WaitForResponse(const char* resp, DataType type, unsigned int timeout = DEFAULT_TIMEOUT, uint16_t inchar_timeout = DEFAULT_INCHAR_TIMEOUT, bool debug=false);
 		bool WriteCommandAndWaitForResponse(const char* cmd, const char *resp, DataType type, unsigned int timeout = DEFAULT_TIMEOUT*5, bool debug=false);
 		bool WriteCommandAndWaitForResponse(const __FlashStringHelper* cmd, const char *resp, DataType type, unsigned int timeout = DEFAULT_TIMEOUT, bool debug=false);
 		void AT_Bypass(void);

@@ -51,7 +51,7 @@ class Quectel_LTE
     public:
         uint32_t _u32ip = 0;
 		char _str_ip[20] = {'\0'};
-        boolean usedSockId[7] = {false};
+        bool usedSockId[7] = {false};
         char _apn[32] = {'\0'};
 		char _user[32] = {'\0'};
 		char _passwd[32] = {'\0'};
@@ -76,41 +76,42 @@ class Quectel_LTE
         bool initialAtCommands(void);
         bool checkSIMStatus(void);
 /************************** Network startup **************************/            
-        boolean isAlive(uint32_t timeout = 5000);
-        boolean waitForNetworkRegister(uint32_t timeout = 120000);
-        boolean Activate(const char* APN, const char* userName, const char* password, long waitForRegistTimeout = 120000);
-        boolean Deactivate();
+        bool isAlive(uint32_t timeout = 5000);
+        bool waitForNetworkRegister(uint32_t timeout = 120000);
+        bool Activate(const char* APN, const char* userName, const char* password, long waitForRegistTimeout = 120000);
+        bool Deactivate();
           
-        boolean getIPAddr(void);
-		boolean getOperator(void);
+        bool getIPAddr(void);
+		bool getOperator(void);
         uint32_t str_to_u32ip(char* str);
 
-        boolean getSignalStrength(int *buffer);
+        bool getSignalStrength(int *buffer);
 /************************** Socket TCP UDP **************************/
-        boolean sockOpen(const char *host, int port, Socket_type connectType);
-        boolean sockClose(int sockid);
-        boolean sockWrite(uint8_t sockid, char *data, uint16_t dataSize);
-        boolean sockWrite(uint8_t sockid, char *data);
+        bool sockOpen(const char *host, int port, Socket_type connectType);
+        bool sockClose(int sockid);
+        bool sockWrite(uint8_t sockid, char *data, uint16_t dataSize);
+        bool sockWrite(uint8_t sockid, char *data);
         uint16_t sockReceive(uint8_t sockid, char *data, uint16_t dataSize, uint32_t timeoutMs=100);
-        boolean udpSendTo(uint8_t sockid, char *host, uint16_t port, char oneByte);               
-        boolean udpSendTo(uint8_t sockid, char *host, uint16_t port, char *data, uint16_t dataSize);
+        bool udpSendTo(uint8_t sockid, char *host, uint16_t port, char oneByte);               
+        bool udpSendTo(uint8_t sockid, char *host, uint16_t port, char *data, uint16_t dataSize);
 
 /************************** HTTP(S) **************************/
-        boolean httpGet(char *url, );
-        boolean httpPost(char *url, );
+        bool httpSetUrl(char *url);
+        bool httpGet(char *url, uint8_t *data, uint16_t dataSize);
+        // bool httpPost(char *url, );
 /************************** MQTT **************************/
 
 /************************** GNSS **************************/
-        boolean open_GNSS(int mode);
-        boolean close_GNSS(void);
-        boolean open_GNSS(void);
+        bool open_GNSS(int mode);
+        bool close_GNSS(void);
+        bool open_GNSS(void);
         void doubleToString(double longitude, double latitude);        
-        boolean getCoordinate(void);            
-        boolean dataFlowMode(void);
-        boolean enable_NMEA_mode();        
-        boolean disable_NMEA_mode();        
-        boolean NMEA_read_and_save(const char *type, char *save_buff);        
-        boolean read_NMEA(NMEA_type data_type, char *recv_buff);       
-        boolean read_NMEA_GSV(char *save_buff);
+        bool getCoordinate(void);            
+        bool dataFlowMode(void);
+        bool enable_NMEA_mode();        
+        bool disable_NMEA_mode();        
+        bool NMEA_read_and_save(const char *type, char *save_buff);        
+        bool read_NMEA(NMEA_type data_type, char *data);       
+        bool read_NMEA_GSV(char *save_buff);
 
 };

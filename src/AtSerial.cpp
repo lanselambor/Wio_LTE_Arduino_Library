@@ -80,7 +80,7 @@ uint16_t AtSerial::ReadUntil(char *buffer, int count, char *pattern, unsigned in
 	return (uint16_t)(i - 1);
 }
 
-uint16_t AtSerial::Read(char* buffer,uint8_t count, uint32_t timeout)
+uint16_t AtSerial::Read(char* buffer,uint8_t count, uint32_t timeout, uint16_t inchar_timeout)
 {
 	uint16_t i = 0;
 	
@@ -97,6 +97,11 @@ uint16_t AtSerial::Read(char* buffer,uint8_t count, uint32_t timeout)
 			if(i >= count)break;
 			if (sw.ElapsedMilliseconds() >= timeout) {
 					break;
+			}
+
+			//If inchar Timeout => return FALSE. So we can return sooner from this function.
+			if (sw_inchar.ElapsedMilliseconds() >= inchar_timeout) {
+					return false;
 			}
 	}
 	buffer[count - 1] = '\0';
@@ -146,16 +151,20 @@ void AtSerial::WriteEndMark(void)
 	WriteCommand((char)26);
 }
 
-bool AtSerial::WaitForResponse(const char* resp, DataType type, unsigned int timeout, bool debug)
+bool AtSerial::WaitForResponse(const char* resp, DataType type, uint16_t timeout, uint16_t inchar_timeout, bool debug)
 {
 	int len = strlen(resp);
 	int sum = 0;
 	
 	Stopwatch sw;
+	Stopwatch sw_inchar;
+
 	sw.Restart();
+	sw_inchar.Restart();
 
 	while(1) {
 			if(_Serial->available()) {
+					sw_inchar.Restart();
 					char c = _Serial->read();
 					
 					if(debug){
@@ -168,11 +177,10 @@ bool AtSerial::WaitForResponse(const char* resp, DataType type, unsigned int tim
 			if (sw.ElapsedMilliseconds() >= timeout) {
 					return false;
 			}
-			//If interchar Timeout => return FALSE. So we can return sooner from this function.
-			// if (((unsigned long) (millis() - prevChar) > chartimeout) && (prevChar != 0)) {
-			// 		return false;
-			// }
-
+			//If inchar Timeout => return FALSE. So we can return sooner from this function.
+			if (sw_inchar.ElapsedMilliseconds() >= inchar_timeout) {
+					return false;
+			}
 	}
 	DEBUG();
 	//If is a CMD, we will finish to read buffer.
@@ -190,13 +198,13 @@ bool AtSerial::WaitForResponse(const char* resp, DataType type, unsigned int tim
 bool AtSerial::WriteCommandAndWaitForResponse(const char* cmd, const char *resp, DataType type, unsigned int timeout, bool debug)
 {
 	WriteCommand(cmd);
-  return WaitForResponse(resp, type, timeout, debug);
+  return WaitForResponse(resp, type, timeout, DEFAULT_INCHAR_TIMEOUT, debug);
 }
 
 bool AtSerial::WriteCommandAndWaitForResponse(const __FlashStringHelper* cmd, const char *resp, DataType type, unsigned int timeout, bool debug)
 {
 	WriteCommand(cmd);
-  return WaitForResponse(resp, type, timeout, debug);
+  return WaitForResponse(resp, type, timeout, DEFAULT_INCHAR_TIMEOUT, debug);
 }
 
 void AtSerial::AT_Bypass(void)
